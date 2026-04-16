@@ -220,7 +220,7 @@
             <button id="xpThemeBtn">🪟 Windows XP</button> <button id="macThemeBtn">🍎 macOS</button>
             <hr>
             <p><strong>🖼️ 桌布設定 (圖片或純色)</strong></p>
-            <div><input type="text" id="wallpaperUrl" placeholder="圖片網址" value="https://images.pexels.com/photos/388415/pexels-photo-388415.jpeg"style="width: 60%;"><button id="applyWallpaperBtn">套用圖片</button></div>
+            <div><input type="text" id="wallpaperUrl" placeholder="圖片網址" style="width: 60%;"><button id="applyWallpaperBtn">套用圖片</button></div>
             <div style="margin-top:8px;"><label>純色背景: </label><input type="color" id="solidColorPicker" value="#3a6ea5"><button id="applySolidColorBtn">套用純色</button><span class="color-preview" id="colorPreview" style="background:#3a6ea5;"></span></div>
             <div><button id="resetWallpaperBtn">重置為主題預設桌布</button></div>
             <div><input type="file" id="wallpaperUpload" accept="image/*" style="margin-top:6px;"></div>
@@ -286,6 +286,43 @@
 </div>
 
 <script>
+    // ======================= 內嵌預設設定 (由 dashboard_full.json 整合) =======================
+    const BUNDLED_CONFIG = {
+  "theme": "xp",
+  "wallpaperType": "image",
+  "wallpaperValue": "https://images.pexels.com/photos/388415/pexels-photo-388415.jpeg",
+  "github": {
+    "username": "kaojarher",
+    "repoConfig": {
+      "projects": [
+        "HEDIT","Mydesktop","NanoMarkRemove","ApolloGuidanceComputer","meetingroom",
+        "RPABlockly","dorotextgame","kao360","news","C11sim","Elisa1","Myphone",
+        "LeanQA","Myagent","Mdedit","Mytoolcard","Camera","flysim","utramanbattlecard",
+        "artemis2","HtmlAgent","ISS","minilooi","sha","fanranrpg","fanran","blog-content"
+      ],
+      "githubUsername": "kaojarher",
+      "userModified": false
+    }
+  },
+  "shortcuts": [
+    {"id":1,"name":"我的儲存庫","iconType":"emoji","icon":"📁","actionType":"function","actionValue":"openWindow('repo-window')","pinToTaskbar":true},
+    {"id":2,"name":"系統設定","iconType":"emoji","icon":"⚙️","actionType":"function","actionValue":"openWindow('settings-window')","pinToTaskbar":true},
+    {"id":3,"name":"關於","iconType":"emoji","icon":"ℹ️","actionType":"function","actionValue":"showAbout()","pinToTaskbar":false},
+    {"id":100,"name":"凡人","iconType":"emoji","icon":"🧘","actionType":"url","actionValue":"https://kaojarher.github.io/fanran/","pinToTaskbar":false},
+    {"id":101,"name":"flysimuation","iconType":"emoji","icon":"🛩","actionType":"url","actionValue":"https://kaojarher.github.io/flysim/","pinToTaskbar":false},
+    {"id":102,"name":"RPA自動化","iconType":"url","icon":"https://cdn-icons-png.freepik.com/512/9255/9255645.png","actionType":"url","actionValue":"https://kaojarher.github.io/RPABlockly/","pinToTaskbar":false},
+    {"id":103,"name":"HEDIT","iconType":"url","icon":"https://cdn-icons-png.flaticon.com/512/4248/4248142.png","actionType":"url","actionValue":"https://kaojarher.github.io/HEDIT/","pinToTaskbar":false},
+    {"id":104,"name":"ISS國際航空站","iconType":"emoji","icon":"🛰","actionType":"url","actionValue":"https://kaojarher.github.io/ISS/","pinToTaskbar":false},
+    {"id":105,"name":"LOOI","iconType":"url","icon":"https://static.vecteezy.com/system/resources/previews/025/785/710/non_2x/cute-robot-head-icon-logo-design-illustration-bot-robotic-logo-for-business-design-template-with-futuristic-flat-black-minimalist-style-isolated-on-white-background-vector.jpg","actionType":"url","actionValue":"https://kaojarher.github.io/minilooi/","pinToTaskbar":false},
+    {"id":106,"name":"MD檔編輯器","iconType":"emoji","icon":"📑","actionType":"url","actionValue":"https://kaojarher.github.io/Mdedit/","pinToTaskbar":false},
+    {"id":107,"name":"網路會議室","iconType":"url","icon":"https://cdn-icons-png.flaticon.com/512/17588/17588666.png","actionType":"url","actionValue":"https://kaojarher.github.io/meetingroom/","pinToTaskbar":false},
+    {"id":108,"name":"瀏覽器","iconType":"url","icon":"https://images.icon-icons.com/836/PNG/512/Google_Chrome_icon-icons.com_66794.png","actionType":"url","actionValue":"https://www.google.com/","pinToTaskbar":false},
+    {"id":109,"name":"NEWS","iconType":"url","icon":"https://www.citypng.com/public/uploads/preview/free-newspaper-news-icon-png-701751694975114q0xwdrzcy0.png","actionType":"url","actionValue":"https://kaojarher.github.io/news/","pinToTaskbar":false},
+    {"id":110,"name":"Instax camera","iconType":"url","icon":"https://img.favpng.com/24/18/3/instant-camera-polaroid-corporation-icon-png-favpng-LZ434LBPmEWP62kVZiYfKSimB.jpg","actionType":"url","actionValue":"https://kaojarher.github.io/Camera/","pinToTaskbar":false}
+  ],
+  "nextId": 111
+};
+
     // ======================= 全域資料 =======================
     let currentTheme = "xp";
     let currentGitHubUsername = "kaojarher";
@@ -297,12 +334,8 @@
     let editingShortcutId = null;
     let dragSrcIndex = null;
     
-    // 預設捷徑 (包含 emoji 示範)
-    const defaultShortcuts = [
-        { id: 1, name: "我的儲存庫", iconType: "emoji", icon: "📁", actionType: "function", actionValue: "openWindow('repo-window')", pinToTaskbar: true },
-        { id: 2, name: "系統設定", iconType: "emoji", icon: "⚙️", actionType: "function", actionValue: "openWindow('settings-window')", pinToTaskbar: true },
-        { id: 3, name: "關於", iconType: "emoji", icon: "ℹ️", actionType: "function", actionValue: "showAbout()", pinToTaskbar: false }
-    ];
+    // 預設捷徑 (保留相容，但實際由 BUNDLED_CONFIG 提供)
+    const defaultShortcuts = BUNDLED_CONFIG.shortcuts;
     
     // ======================= 儲存與載入 =======================
     function saveAllSettings() {
@@ -362,9 +395,9 @@
     function setDefaultThemeWallpaper() {
         document.body.style.backgroundColor = "";
         if (currentTheme === "xp") {
-            document.body.style.backgroundImage = "url('https://images.pexels.com/photos/388415/pexels-photo-388415.jpeg')";
+            document.body.style.backgroundImage = "url('https://wallpapercave.com/wp/wp1851030.jpg')";
         } else {
-            document.body.style.backgroundImage = "url('https://images.pexels.com/photos/388415/pexels-photo-388415.jpeg')";
+            document.body.style.backgroundImage = "url('https://images.pexels.com/photos/268533/pexels-photo-268533.jpeg?auto=compress&cs=tinysrgb&w=1600')";
         }
         document.body.style.backgroundSize = "cover";
     }
@@ -671,9 +704,47 @@
         });
     }
     
+    // 內嵌設定版本號，修改 BUNDLED_CONFIG 時請同步更新此值
+    const BUNDLED_VERSION = "v2025-04-16-1";
+
+    function applyConfig(data) {
+        if (data.theme) setTheme(data.theme, false);
+        if (data.wallpaperType) {
+            wallpaperType = data.wallpaperType;
+            wallpaperValue = data.wallpaperValue || null;
+            applyWallpaperFromState();
+        }
+        if (data.github) {
+            currentGitHubUsername = data.github.username;
+            repoConfig = data.github.repoConfig || { projects: [], githubUsername: currentGitHubUsername, userModified: false };
+            if (!repoConfig.projects) repoConfig.projects = [];
+        }
+        if (data.shortcuts && Array.isArray(data.shortcuts)) {
+            desktopShortcuts = data.shortcuts;
+        }
+        if (data.nextId) nextShortcutId = data.nextId;
+    }
+
     function init() {
-        loadAllSettings();
-        if (!desktopShortcuts.length) { desktopShortcuts = defaultShortcuts; nextShortcutId = 100; saveAllSettings(); }
+        const savedVersion = localStorage.getItem('dashboard_bundled_version');
+        const saved = localStorage.getItem('dashboard_full_config_v2');
+
+        if (saved && savedVersion === BUNDLED_VERSION) {
+            // 版本相符，使用 localStorage 的使用者設定
+            try {
+                const data = JSON.parse(saved);
+                applyConfig(data);
+            } catch(e) {
+                applyConfig(BUNDLED_CONFIG);
+            }
+        } else {
+            // 首次開啟，或內嵌設定已更新 → 強制套用 BUNDLED_CONFIG
+            applyConfig(BUNDLED_CONFIG);
+            localStorage.setItem('dashboard_bundled_version', BUNDLED_VERSION);
+            saveAllSettings();
+        }
+
+        if (!desktopShortcuts.length) { desktopShortcuts = defaultShortcuts; nextShortcutId = BUNDLED_CONFIG.nextId || 111; saveAllSettings(); }
         renderDesktopIcons(); renderShortcutManager(); renderQuickLaunch();
         bindEvents(); initDragWindows(); updateClock(); setInterval(updateClock, 1000);
         if (!repoConfig.projects.length) syncFromGitHub().catch(()=>{});
