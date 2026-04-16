@@ -220,7 +220,7 @@
             <button id="xpThemeBtn">🪟 Windows XP</button> <button id="macThemeBtn">🍎 macOS</button>
             <hr>
             <p><strong>🖼️ 桌布設定 (圖片或純色)</strong></p>
-            <div><input type="text" id="wallpaperUrl" placeholder="圖片網址" style="width: 60%;"><button id="applyWallpaperBtn">套用圖片</button></div>
+            <div><input type="text" id="wallpaperUrl" placeholder="圖片網址" value="https://images.pexels.com/photos/388415/pexels-photo-388415.jpeg"style="width: 60%;"><button id="applyWallpaperBtn">套用圖片</button></div>
             <div style="margin-top:8px;"><label>純色背景: </label><input type="color" id="solidColorPicker" value="#3a6ea5"><button id="applySolidColorBtn">套用純色</button><span class="color-preview" id="colorPreview" style="background:#3a6ea5;"></span></div>
             <div><button id="resetWallpaperBtn">重置為主題預設桌布</button></div>
             <div><input type="file" id="wallpaperUpload" accept="image/*" style="margin-top:6px;"></div>
@@ -362,9 +362,9 @@
     function setDefaultThemeWallpaper() {
         document.body.style.backgroundColor = "";
         if (currentTheme === "xp") {
-            document.body.style.backgroundImage = "url('https://wallpapercave.com/wp/wp1851030.jpg')";
+            document.body.style.backgroundImage = "url('https://images.pexels.com/photos/388415/pexels-photo-388415.jpeg')";
         } else {
-            document.body.style.backgroundImage = "url('https://images.pexels.com/photos/268533/pexels-photo-268533.jpeg?auto=compress&cs=tinysrgb&w=1600')";
+            document.body.style.backgroundImage = "url('https://images.pexels.com/photos/388415/pexels-photo-388415.jpeg')";
         }
         document.body.style.backgroundSize = "cover";
     }
