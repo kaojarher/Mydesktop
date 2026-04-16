@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>雙主題儀表板 - 自訂捷徑(Emoji/圖片)｜純色桌布｜GitHub管理</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, "Segoe UI", "Tahoma", "Helvetica Neue", sans-serif;
+            user-select: none;
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            transition: background-color 0.2s, background-image 0.2s;
+        }
+        /* 桌面區域 */
+        #desktop {
+            position: relative;
+            height: calc(100% - 50px);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            gap: 20px;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        .desktop-icons-container {
+            display: flex;
+            flex-direction: column;
+            flex-wrap: wrap;
+            gap: 20px;
+            height: 100%;
+        }
+        .icon {
+            width: 85px;
+            text-align: center;
+            cursor: grab;
+            transition: 0.05s linear;
+            padding: 6px;
+            border-radius: 8px;
+            background: transparent;
+            position: relative;
+        }
+        .icon:active { cursor: grabbing; }
+        .icon.dragging { opacity: 0.5; }
+        .icon .icon-img {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            pointer-events: none;
+        }
+        .icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.3));
+        }
+        .icon span {
+            display: block;
+            font-size: 12px;
+            margin-top: 6px;
+            font-weight: 500;
+            word-break: break-word;
+        }
+        body.xp-theme .icon span { color: white; text-shadow: 1px 1px 1px black; }
+        body.mac-theme .icon span { color: #1e1e1e; text-shadow: 0 1px 0 rgba(255,255,255,0.5); }
+
+        /* 視窗樣式 (簡化，沿用之前) */
+        .window {
+            position: absolute;
+            min-width: 300px;
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            display: none;
+            flex-direction: column;
+            z-index: 100;
+        }
+        .window-header {
+            height: 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 10px;
+            font-weight: bold;
+            cursor: move;
+            border-top-left-radius: inherit;
+            border-top-right-radius: inherit;
+        }
+        .window-controls button {
+            width: 28px;
+            height: 24px;
+            border: none;
+            border-radius: 6px;
+            background: rgba(0,0,0,0.2);
+            cursor: pointer;
+            margin-left: 6px;
+        }
+        .close-btn { background: #ff5f5f; color: white; }
+        .window-body {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            background: white;
+            border-radius: 0 0 10px 10px;
+        }
+        body.xp-theme .window {
+            border: 3px solid #0058e6;
+            border-radius: 8px 8px 0 0;
+            background: #ece9d8;
+        }
+        body.xp-theme .window-header {
+            background: linear-gradient(to bottom, #0058e6 0%, #0869f6 4%, #005ad9 6%, #005ad9 90%, #0030ad 100%);
+            color: white;
+        }
+        body.mac-theme .window {
+            background: rgba(245, 245, 247, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.6);
+            border-radius: 12px;
+        }
+        body.mac-theme .window-header {
+            background: rgba(240, 240, 245, 0.7);
+            color: #1c1c1e;
+            border-bottom: 1px solid #ccc;
+        }
+        /* 工作列 */
+        #taskbar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            z-index: 200;
+        }
+        body.xp-theme #taskbar {
+            background: linear-gradient(to bottom, #245edb 0%, #3f8cf3 9%, #245edb 18%, #245edb 92%, #1941a5 100%);
+            border-top: 1px solid #3f9cff;
+        }
+        body.mac-theme #taskbar {
+            background: rgba(255,255,255,0.75);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(0,0,0,0.1);
+            padding: 0 20px;
+        }
+        #start-btn {
+            font-weight: bold;
+            cursor: pointer;
+            padding: 0 18px;
+            height: 80%;
+            border-radius: 12px;
+            border: none;
+        }
+        body.xp-theme #start-btn {
+            background: linear-gradient(to bottom, #388e3c, #4caf50);
+            color: white;
+            font-style: italic;
+            border-radius: 0 12px 12px 0;
+        }
+        body.mac-theme #start-btn {
+            background: #2e2e32;
+            color: white;
+            font-weight: 600;
+        }
+        .quick-launch { display: flex; gap: 6px; margin-left: 12px; align-items: center; height: 100%; }
+        .quick-launch-item {
+            width: 36px; height: 36px; cursor: pointer; background: rgba(0,0,0,0.2);
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
+        }
+        .quick-launch-item img, .quick-launch-item .emoji-icon { width: 28px; height: 28px; font-size: 24px; text-align: center; }
+        .taskbar-time { margin-left: auto; margin-right: 20px; font-size: 14px; }
+        body.xp-theme .taskbar-time { color: white; }
+        body.mac-theme .taskbar-time { color: #1c1c1e; }
+
+        /* 表單與管理區 */
+        .shortcut-form input, .shortcut-form select { width: 100%; margin: 8px 0; padding: 8px; border-radius: 6px; border: 1px solid #aaa; }
+        .repo-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px,1fr)); gap: 12px; }
+        .repo-item { border: 1px solid #b9c9e5; padding: 10px; text-align: center; border-radius: 12px; text-decoration: none; background: #f8faff; }
+        .shortcut-manager { max-height: 200px; overflow-y: auto; border: 1px solid #ccc; border-radius: 8px; margin: 10px 0; }
+        .shortcut-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; border-bottom: 1px solid #eee; }
+        .shortcut-row span { flex: 2; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+        .shortcut-row button { margin: 0 4px; padding: 2px 8px; font-size: 12px; }
+        .emoji-picker { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0; padding: 8px; background: #f5f5f5; border-radius: 12px; }
+        .emoji-option { font-size: 28px; cursor: pointer; padding: 5px; border-radius: 12px; transition: 0.1s; width: 48px; text-align: center; }
+        .emoji-option:hover { background: #ddd; transform: scale(1.1); }
+        .color-preview { width: 40px; height: 40px; border-radius: 8px; border: 1px solid #aaa; display: inline-block; vertical-align: middle; margin-left: 8px; }
+    </style>
+</head>
+<body class="xp-theme">
+
+<div id="desktop">
+    <div class="desktop-icons-container" id="iconsContainer"></div>
+</div>
+
+<!-- GitHub 視窗 -->
+<div id="repo-window" class="window" style="width: 620px; height: 480px; left: 80px; top: 80px;">
+    <div class="window-header"><span>📁 GitHub 倉庫總管</span><div class="window-controls"><button class="close-btn" onclick="closeWindow('repo-window')">✖</button></div></div>
+    <div class="window-body">
+        <div style="margin-bottom:10px; display:flex; justify-content:space-between;"><span id="currentAccountDisplay">👤 帳號: kaojarher</span><button id="manualSyncBtn">🔄 同步倉庫</button></div>
+        <div class="repo-list" id="repo-list-content">載入中...</div>
+    </div>
+</div>
+
+<!-- 系統設定視窗 -->
+<div id="settings-window" class="window" style="width: 650px; height: 680px; left: 180px; top: 80px;">
+    <div class="window-header"><span>⚙️ 系統設定 & 捷徑管理</span><div class="window-controls"><button class="close-btn" onclick="closeWindow('settings-window')">✖</button></div></div>
+    <div class="window-body">
+        <div style="background:#f0f0f0; padding:12px; border-radius:12px;">
+            <p><strong>🎨 佈景主題</strong></p>
+            <button id="xpThemeBtn">🪟 Windows XP</button> <button id="macThemeBtn">🍎 macOS</button>
+            <hr>
+            <p><strong>🖼️ 桌布設定 (圖片或純色)</strong></p>
+            <div><input type="text" id="wallpaperUrl" placeholder="圖片網址" style="width: 60%;"><button id="applyWallpaperBtn">套用圖片</button></div>
+            <div style="margin-top:8px;"><label>純色背景: </label><input type="color" id="solidColorPicker" value="#3a6ea5"><button id="applySolidColorBtn">套用純色</button><span class="color-preview" id="colorPreview" style="background:#3a6ea5;"></span></div>
+            <div><button id="resetWallpaperBtn">重置為主題預設桌布</button></div>
+            <div><input type="file" id="wallpaperUpload" accept="image/*" style="margin-top:6px;"></div>
+            <hr>
+            <p><strong>👤 GitHub 帳號</strong></p>
+            <div style="display:flex; gap:8px;"><input type="text" id="githubUsernameInput" placeholder="使用者名稱" style="flex:1;"><button id="applyUsernameBtn">切換並同步</button></div>
+            <hr>
+            <p><strong>📌 桌面捷徑管理</strong> <button id="newShortcutBtn">➕ 新增捷徑</button></p>
+            <div class="shortcut-manager" id="shortcutListContainer"></div>
+            <p style="font-size:12px;">💡 提示：拖拽桌面圖示排序；勾選「顯示於工作列」會出現在開始按鈕旁。捷徑圖示可使用 Emoji 或圖片網址。</p>
+            <hr>
+            <p><strong>📦 匯出/匯入全部設定</strong></p>
+            <button onclick="exportFullConfig()">📤 匯出設定 (JSON)</button>
+            <input type="file" id="importFullFile" accept=".json" style="margin:6px 0;"><button onclick="importFullConfig()">📥 匯入並套用</button>
+        </div>
+        <div id="settingStatus" style="font-size:12px; margin-top:12px; color:#2c6e2f;"></div>
+    </div>
+</div>
+
+<!-- 新增/編輯捷徑對話框 (支援 emoji 選擇) -->
+<div id="shortcutDialog" class="window" style="width: 480px; height: 560px; left: 250px; top: 150px;">
+    <div class="window-header"><span id="dialogTitle">➕ 建立捷徑</span><div class="window-controls"><button class="close-btn" onclick="closeWindow('shortcutDialog')">✖</button></div></div>
+    <div class="window-body">
+        <div class="shortcut-form">
+            <label>捷徑名稱:</label><input type="text" id="editShortcutName" placeholder="名稱">
+            <label>圖示類型:</label>
+            <select id="iconTypeSelect">
+                <option value="emoji">😀 使用 Emoji 圖示</option>
+                <option value="url">🖼️ 使用圖片網址</option>
+            </select>
+            <div id="emojiSection">
+                <label>選擇 Emoji (點擊即可選用):</label>
+                <div class="emoji-picker" id="emojiPicker">
+                    <!-- 常用 emoji -->
+                    <span class="emoji-option">📁</span> <span class="emoji-option">⚙️</span> <span class="emoji-option">🌐</span> <span class="emoji-option">💻</span>
+                    <span class="emoji-option">🐙</span> <span class="emoji-option">⭐</span> <span class="emoji-option">🔧</span> <span class="emoji-option">🎨</span>
+                    <span class="emoji-option">🖼️</span> <span class="emoji-option">📊</span> <span class="emoji-option">🔗</span> <span class="emoji-option">💾</span>
+                    <span class="emoji-option">📌</span> <span class="emoji-option">🚀</span> <span class="emoji-option">🎯</span> <span class="emoji-option">🛠️</span>
+                    <span class="emoji-option">📂</span> <span class="emoji-option">🔍</span> <span class="emoji-option">✨</span> <span class="emoji-option">❤️</span>
+                </div>
+                <label>或自訂 Emoji (貼上單個 Emoji):</label>
+                <input type="text" id="customEmojiInput" placeholder="例如 🐱" maxlength="2">
+            </div>
+            <div id="urlSection" style="display:none;">
+                <label>圖示網址:</label><input type="text" id="editShortcutIconUrl" placeholder="https://...">
+            </div>
+            <label>動作類型:</label>
+            <select id="editShortcutActionType"><option value="url">開啟網址</option><option value="function">執行函數</option></select>
+            <label>目標 (網址或函數呼叫):</label><input type="text" id="editShortcutTarget" placeholder="https:// 或 openWindow('repo-window')">
+            <label><input type="checkbox" id="editShortcutPinTaskbar"> 顯示於工作列 (快速啟動)</label>
+            <button id="saveShortcutBtn" style="margin-top:12px;">💾 儲存</button>
+        </div>
+    </div>
+</div>
+
+<!-- 開始選單 -->
+<div id="startMenu" class="start-menu" style="position:fixed; bottom:50px; left:0; width:260px; background:rgba(240,240,245,0.95); backdrop-filter:blur(20px); border-radius:12px; box-shadow:0 5px 20px rgba(0,0,0,0.3); z-index:250; display:none; padding:8px 0;"></div>
+
+<div id="taskbar">
+    <button id="start-btn">開始</button>
+    <div class="quick-launch" id="quickLaunchArea"></div>
+    <div id="clock" class="taskbar-time">--:--</div>
+</div>
+
+<script>
+    // ======================= 全域資料 =======================
+    let currentTheme = "xp";
+    let currentGitHubUsername = "kaojarher";
+    let repoConfig = { projects: [], githubUsername: "kaojarher", userModified: false };
+    let desktopShortcuts = [];
+    let nextShortcutId = 100;
+    let wallpaperType = "image"; // "image" or "color"
+    let wallpaperValue = null;    // 圖片URL 或 顏色值
+    let editingShortcutId = null;
+    let dragSrcIndex = null;
+    
+    // 預設捷徑 (包含 emoji 示範)
+    const defaultShortcuts = [
+        { id: 1, name: "我的儲存庫", iconType: "emoji", icon: "📁", actionType: "function", actionValue: "openWindow('repo-window')", pinToTaskbar: true },
+        { id: 2, name: "系統設定", iconType: "emoji", icon: "⚙️", actionType: "function", actionValue: "openWindow('settings-window')", pinToTaskbar: true },
+        { id: 3, name: "關於", iconType: "emoji", icon: "ℹ️", actionType: "function", actionValue: "showAbout()", pinToTaskbar: false }
+    ];
+    
+    // ======================= 儲存與載入 =======================
+    function saveAllSettings() {
+        const fullData = {
+            theme: currentTheme,
+            wallpaperType, wallpaperValue,
+            github: { username: currentGitHubUsername, repoConfig },
+            shortcuts: desktopShortcuts,
+            nextId: nextShortcutId
+        };
+        localStorage.setItem('dashboard_full_config_v2', JSON.stringify(fullData));
+    }
+    
+    function loadAllSettings() {
+        const saved = localStorage.getItem('dashboard_full_config_v2');
+        if (!saved) return;
+        try {
+            const data = JSON.parse(saved);
+            if (data.theme) setTheme(data.theme, false);
+            if (data.wallpaperType && data.wallpaperValue !== undefined) {
+                wallpaperType = data.wallpaperType;
+                wallpaperValue = data.wallpaperValue;
+                applyWallpaperFromState();
+            }
+            if (data.github) {
+                currentGitHubUsername = data.github.username;
+                repoConfig = data.github.repoConfig || { projects: [], githubUsername: currentGitHubUsername, userModified: false };
+                if (!repoConfig.projects) repoConfig.projects = [];
+                renderRepos();
+                updateAccountDisplay();
+            }
+            if (data.shortcuts && Array.isArray(data.shortcuts)) {
+                desktopShortcuts = data.shortcuts;
+                renderDesktopIcons();
+                renderShortcutManager();
+                renderQuickLaunch();
+            }
+            if (data.nextId) nextShortcutId = data.nextId;
+        } catch(e) { console.warn(e); }
+    }
+    
+    // 桌布套用
+    function applyWallpaperFromState() {
+        if (wallpaperType === "color" && wallpaperValue) {
+            document.body.style.backgroundImage = "none";
+            document.body.style.backgroundColor = wallpaperValue;
+        } else if (wallpaperType === "image" && wallpaperValue) {
+            document.body.style.backgroundColor = "";
+            document.body.style.backgroundImage = `url('${wallpaperValue}')`;
+            document.body.style.backgroundSize = "cover";
+            document.body.style.backgroundPosition = "center";
+        } else {
+            // 預設主題桌布
+            setDefaultThemeWallpaper();
+        }
+    }
+    function setDefaultThemeWallpaper() {
+        document.body.style.backgroundColor = "";
+        if (currentTheme === "xp") {
+            document.body.style.backgroundImage = "url('https://wallpapercave.com/wp/wp1851030.jpg')";
+        } else {
+            document.body.style.backgroundImage = "url('https://images.pexels.com/photos/268533/pexels-photo-268533.jpeg?auto=compress&cs=tinysrgb&w=1600')";
+        }
+        document.body.style.backgroundSize = "cover";
+    }
+    function setSolidColor(color) {
+        wallpaperType = "color";
+        wallpaperValue = color;
+        document.body.style.backgroundImage = "none";
+        document.body.style.backgroundColor = color;
+        saveAllSettings();
+        document.getElementById('colorPreview').style.backgroundColor = color;
+    }
+    function setImageWallpaper(url) {
+        wallpaperType = "image";
+        wallpaperValue = url;
+        document.body.style.backgroundColor = "";
+        document.body.style.backgroundImage = `url('${url}')`;
+        document.body.style.backgroundSize = "cover";
+        document.body.style.backgroundPosition = "center";
+        saveAllSettings();
+    }
+    function resetWallpaper() {
+        wallpaperType = "image";
+        wallpaperValue = null;
+        setDefaultThemeWallpaper();
+        saveAllSettings();
+    }
+    
+    function setTheme(theme, save = true) {
+        currentTheme = theme;
+        document.body.classList.remove("xp-theme", "mac-theme");
+        document.body.classList.add(theme === "xp" ? "xp-theme" : "mac-theme");
+        if (!wallpaperValue || wallpaperType === "image" && !wallpaperValue) setDefaultThemeWallpaper();
+        if (save) saveAllSettings();
+    }
+    
+    // ======================= 捷徑渲染 =======================
+    function renderDesktopIcons() {
+        const container = document.getElementById('iconsContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        desktopShortcuts.forEach((shortcut, idx) => {
+            const iconDiv = document.createElement('div');
+            iconDiv.className = 'icon';
+            iconDiv.setAttribute('draggable', 'true');
+            iconDiv.setAttribute('data-index', idx);
+            let innerIcon = '';
+            if (shortcut.iconType === 'emoji') {
+                innerIcon = `<div class="icon-img" style="font-size:52px; line-height:1;">${shortcut.icon || '📄'}</div>`;
+            } else {
+                innerIcon = `<div class="icon-img"><img src="${shortcut.icon}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1828/1828884.png'"></div>`;
+            }
+            iconDiv.innerHTML = innerIcon + `<span>${escapeHtml(shortcut.name)}</span>`;
+            iconDiv.addEventListener('click', (e) => { e.stopPropagation(); executeAction(shortcut); });
+            iconDiv.addEventListener('dragstart', handleDragStart);
+            iconDiv.addEventListener('dragover', handleDragOver);
+            iconDiv.addEventListener('drop', handleDrop);
+            iconDiv.addEventListener('dragend', handleDragEnd);
+            container.appendChild(iconDiv);
+        });
+    }
+    
+    function renderShortcutManager() {
+        const container = document.getElementById('shortcutListContainer');
+        if (!container) return;
+        if (!desktopShortcuts.length) { container.innerHTML = "<div style='padding:8px;'>尚無捷徑，點擊新增</div>"; return; }
+        container.innerHTML = desktopShortcuts.map(short => `
+            <div class="shortcut-row">
+                <span>${short.iconType === 'emoji' ? `<span style="font-size:24px;">${short.icon}</span>` : `<img src="${short.icon}" width="24">`} ${escapeHtml(short.name)}</span>
+                <div>
+                    <label style="font-size:12px;"><input type="checkbox" class="pin-checkbox" data-id="${short.id}" ${short.pinToTaskbar ? 'checked' : ''}> 工作列</label>
+                    <button class="edit-shortcut" data-id="${short.id}">✏️</button>
+                    <button class="del-shortcut" data-id="${short.id}">🗑️</button>
+                </div>
+            </div>
+        `).join('');
+        document.querySelectorAll('.edit-shortcut').forEach(btn => btn.addEventListener('click', (e) => openEditDialog(parseInt(btn.getAttribute('data-id')))));
+        document.querySelectorAll('.del-shortcut').forEach(btn => btn.addEventListener('click', (e) => deleteShortcutById(parseInt(btn.getAttribute('data-id')))));
+        document.querySelectorAll('.pin-checkbox').forEach(cb => cb.addEventListener('change', (e) => {
+            const id = parseInt(cb.getAttribute('data-id'));
+            const s = desktopShortcuts.find(s => s.id === id);
+            if (s) { s.pinToTaskbar = cb.checked; saveAllSettings(); renderQuickLaunch(); }
+        }));
+    }
+    
+    function renderQuickLaunch() {
+        const area = document.getElementById('quickLaunchArea');
+        if (!area) return;
+        area.innerHTML = '';
+        desktopShortcuts.filter(s => s.pinToTaskbar).forEach(short => {
+            const div = document.createElement('div');
+            div.className = 'quick-launch-item';
+            div.title = short.name;
+            if (short.iconType === 'emoji') {
+                div.innerHTML = `<span class="emoji-icon" style="font-size:24px;">${short.icon}</span>`;
+            } else {
+                div.innerHTML = `<img src="${short.icon}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1828/1828884.png'">`;
+            }
+            div.addEventListener('click', () => executeAction(short));
+            area.appendChild(div);
+        });
+    }
+    
+    function executeAction(shortcut) {
+        if (shortcut.actionType === "url") window.open(shortcut.actionValue, '_blank');
+        else if (shortcut.actionType === "function") { try { eval(shortcut.actionValue); } catch(e) { alert("執行錯誤"); } }
+    }
+    
+    function openEditDialog(id = null) {
+        editingShortcutId = id;
+        document.getElementById('dialogTitle').innerText = id === null ? "➕ 新增捷徑" : "✏️ 編輯捷徑";
+        const dialog = document.getElementById('shortcutDialog');
+        if (id !== null) {
+            const target = desktopShortcuts.find(s => s.id === id);
+            if (target) {
+                document.getElementById('editShortcutName').value = target.name;
+                document.getElementById('iconTypeSelect').value = target.iconType;
+                toggleIconFields(target.iconType);
+                if (target.iconType === 'emoji') {
+                    // 將現有 emoji 放入自訂欄位
+                    document.getElementById('customEmojiInput').value = target.icon;
+                } else {
+                    document.getElementById('editShortcutIconUrl').value = target.icon;
+                }
+                document.getElementById('editShortcutActionType').value = target.actionType;
+                document.getElementById('editShortcutTarget').value = target.actionValue;
+                document.getElementById('editShortcutPinTaskbar').checked = target.pinToTaskbar === true;
+            }
+        } else {
+            document.getElementById('editShortcutName').value = "";
+            document.getElementById('iconTypeSelect').value = "emoji";
+            toggleIconFields("emoji");
+            document.getElementById('customEmojiInput').value = "📁";
+            document.getElementById('editShortcutIconUrl').value = "";
+            document.getElementById('editShortcutActionType').value = "url";
+            document.getElementById('editShortcutTarget').value = "";
+            document.getElementById('editShortcutPinTaskbar').checked = false;
+        }
+        openWindow('shortcutDialog');
+    }
+    
+    function toggleIconFields(type) {
+        const emojiSec = document.getElementById('emojiSection');
+        const urlSec = document.getElementById('urlSection');
+        if (type === 'emoji') { emojiSec.style.display = 'block'; urlSec.style.display = 'none'; }
+        else { emojiSec.style.display = 'none'; urlSec.style.display = 'block'; }
+    }
+    
+    function saveShortcutFromDialog() {
+        const name = document.getElementById('editShortcutName').value.trim();
+        const iconType = document.getElementById('iconTypeSelect').value;
+        let iconValue = "";
+        if (iconType === 'emoji') {
+            let customEmoji = document.getElementById('customEmojiInput').value.trim();
+            if (customEmoji && customEmoji.length > 0) iconValue = customEmoji;
+            else iconValue = "📄";
+        } else {
+            iconValue = document.getElementById('editShortcutIconUrl').value.trim();
+            if (!iconValue) iconValue = "https://cdn-icons-png.flaticon.com/512/1828/1828884.png";
+        }
+        const actionType = document.getElementById('editShortcutActionType').value;
+        const target = document.getElementById('editShortcutTarget').value.trim();
+        const pin = document.getElementById('editShortcutPinTaskbar').checked;
+        if (!name || !target) { alert("請填寫名稱與目標"); return; }
+        if (editingShortcutId === null) {
+            desktopShortcuts.push({ id: nextShortcutId++, name, iconType, icon: iconValue, actionType, actionValue: target, pinToTaskbar: pin });
+        } else {
+            const idx = desktopShortcuts.findIndex(s => s.id === editingShortcutId);
+            if (idx !== -1) {
+                desktopShortcuts[idx] = { ...desktopShortcuts[idx], name, iconType, icon: iconValue, actionType, actionValue: target, pinToTaskbar: pin };
+            }
+        }
+        closeWindow('shortcutDialog');
+        renderDesktopIcons();
+        renderShortcutManager();
+        renderQuickLaunch();
+        saveAllSettings();
+    }
+    
+    function deleteShortcutById(id) {
+        if (confirm("刪除此捷徑？")) {
+            desktopShortcuts = desktopShortcuts.filter(s => s.id !== id);
+            renderDesktopIcons(); renderShortcutManager(); renderQuickLaunch(); saveAllSettings();
+        }
+    }
+    
+    // 拖拽排序
+    function handleDragStart(e) {
+        const target = e.target.closest('.icon');
+        if (!target) return;
+        dragSrcIndex = parseInt(target.getAttribute('data-index'));
+        e.dataTransfer.effectAllowed = 'move';
+        target.classList.add('dragging');
+    }
+    function handleDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
+    function handleDrop(e) {
+        e.preventDefault();
+        const targetIcon = e.target.closest('.icon');
+        if (!targetIcon) return;
+        const destIndex = parseInt(targetIcon.getAttribute('data-index'));
+        if (dragSrcIndex !== null && dragSrcIndex !== destIndex) {
+            const moved = desktopShortcuts[dragSrcIndex];
+            desktopShortcuts.splice(dragSrcIndex, 1);
+            desktopShortcuts.splice(destIndex, 0, moved);
+            renderDesktopIcons(); renderShortcutManager(); renderQuickLaunch(); saveAllSettings();
+        }
+    }
+    function handleDragEnd(e) { if(e.target.closest('.icon')) e.target.closest('.icon').classList.remove('dragging'); dragSrcIndex = null; }
+    
+    // GitHub 功能
+    async function fetchGitHubRepos(username) {
+        const url = `https://api.github.com/users/${encodeURIComponent(username)}/repos?per_page=100&sort=updated`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`無法取得 ${username}`);
+        const repos = await res.json();
+        return repos.map(r => r.name);
+    }
+    async function syncFromGitHub() {
+        try {
+            const list = await fetchGitHubRepos(currentGitHubUsername);
+            repoConfig.projects = list;
+            saveAllSettings();
+            renderRepos();
+            showStatus("✅ 同步完成");
+        } catch(e) { showStatus("❌ 同步失敗: " + e.message); }
+    }
+    function renderRepos() {
+        const container = document.getElementById('repo-list-content');
+        if (!container) return;
+        const projects = repoConfig.projects || [];
+        if (!projects.length) { container.innerHTML = '<div>尚無倉庫，請同步</div>'; return; }
+        const baseUrl = `https://${currentGitHubUsername}.github.io/`;
+        container.innerHTML = projects.map(repo => `<a href="${baseUrl}${repo}/" target="_blank" class="repo-item"><img src="https://cdn-icons-png.flaticon.com/512/25/25231.png" width="30"><br>${escapeHtml(repo)}</a>`).join('');
+    }
+    function updateAccountDisplay() { document.getElementById('currentAccountDisplay').innerText = `👤 帳號: ${currentGitHubUsername}`; }
+    async function switchGitHubAccount(username) { currentGitHubUsername = username; await syncFromGitHub(); updateAccountDisplay(); saveAllSettings(); }
+    
+    // 開始選單
+    function buildStartMenu() {
+        const menu = document.getElementById('startMenu');
+        menu.innerHTML = `<div class="start-menu-item" onclick="openWindow('repo-window'); closeStartMenu();"><span>📁</span> GitHub 倉庫</div>
+                          <div class="start-menu-item" onclick="openWindow('settings-window'); closeStartMenu();"><span>⚙️</span> 系統設定</div><hr>`;
+        desktopShortcuts.forEach(short => {
+            const div = document.createElement('div');
+            div.className = 'start-menu-item';
+            div.innerHTML = `<span style="font-size:20px;">${short.iconType === 'emoji' ? short.icon : '🖼️'}</span> ${escapeHtml(short.name)}`;
+            div.onclick = () => { executeAction(short); closeStartMenu(); };
+            menu.appendChild(div);
+        });
+    }
+    function toggleStartMenu() { const m = document.getElementById('startMenu'); if (m.style.display === 'block') m.style.display = 'none'; else { buildStartMenu(); m.style.display = 'block'; } }
+    function closeStartMenu() { document.getElementById('startMenu').style.display = 'none'; }
+    
+    // 匯入匯出
+    function exportFullConfig() {
+        const data = { theme: currentTheme, wallpaperType, wallpaperValue, github: { username: currentGitHubUsername, repoConfig }, shortcuts: desktopShortcuts, nextId: nextShortcutId };
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type: "application/json"}));
+        a.download = "dashboard_full.json";
+        a.click();
+    }
+    function importFullConfig() {
+        const file = document.getElementById('importFullFile').files[0];
+        if (!file) return alert("請選擇檔案");
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (data.theme) setTheme(data.theme, false);
+                if (data.wallpaperType && data.wallpaperValue) { wallpaperType = data.wallpaperType; wallpaperValue = data.wallpaperValue; applyWallpaperFromState(); }
+                if (data.github) { currentGitHubUsername = data.github.username; repoConfig = data.github.repoConfig; renderRepos(); updateAccountDisplay(); }
+                if (data.shortcuts) { desktopShortcuts = data.shortcuts; renderDesktopIcons(); renderShortcutManager(); renderQuickLaunch(); }
+                if (data.nextId) nextShortcutId = data.nextId;
+                saveAllSettings();
+                alert("匯入成功"); location.reload();
+            } catch(err) { alert("格式錯誤"); }
+        };
+        reader.readAsText(file);
+    }
+    
+    function showStatus(msg) { const div = document.getElementById('settingStatus'); if(div){ div.innerText=msg; setTimeout(()=> div.innerText='',3000); } }
+    function escapeHtml(str) { return String(str).replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
+    function openWindow(id) { const w = document.getElementById(id); if(w){ w.style.display='flex'; w.style.zIndex=100+Math.random()*100; } }
+    function closeWindow(id) { document.getElementById(id).style.display='none'; }
+    function updateClock() { document.getElementById('clock').innerText = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); }
+    function initDragWindows() { /* 簡易拖曳省略，但保留視窗移動能力 */ document.querySelectorAll('.window-header').forEach(h=>{ const w=h.parentElement; let drag=false,ox,oy; h.addEventListener('mousedown',e=>{ if(e.target.closest('.window-controls')) return; drag=true; const r=w.getBoundingClientRect(); ox=e.clientX-r.left; oy=e.clientY-r.top; w.style.zIndex=1000; e.preventDefault(); }); window.addEventListener('mousemove',e=>{ if(drag){ w.style.left=(e.clientX-ox)+'px'; w.style.top=(e.clientY-oy)+'px'; } }); window.addEventListener('mouseup',()=>drag=false); }); }
+    
+    function bindEvents() {
+        document.getElementById('xpThemeBtn').onclick = () => setTheme("xp");
+        document.getElementById('macThemeBtn').onclick = () => setTheme("mac");
+        document.getElementById('applyWallpaperBtn').onclick = () => { const url = document.getElementById('wallpaperUrl').value.trim(); if(url) setImageWallpaper(url); };
+        document.getElementById('applySolidColorBtn').onclick = () => { const color = document.getElementById('solidColorPicker').value; setSolidColor(color); };
+        document.getElementById('resetWallpaperBtn').onclick = () => resetWallpaper();
+        document.getElementById('applyUsernameBtn').onclick = async () => { const name = document.getElementById('githubUsernameInput').value.trim(); if(name) await switchGitHubAccount(name); };
+        document.getElementById('manualSyncBtn').onclick = () => syncFromGitHub();
+        document.getElementById('newShortcutBtn').onclick = () => openEditDialog(null);
+        document.getElementById('saveShortcutBtn').onclick = () => saveShortcutFromDialog();
+        document.getElementById('start-btn').onclick = (e) => { e.stopPropagation(); toggleStartMenu(); };
+        document.addEventListener('click', (e) => { if(!e.target.closest('#start-btn') && !e.target.closest('.start-menu')) closeStartMenu(); });
+        document.getElementById('wallpaperUpload').addEventListener('change', (e) => { const file=e.target.files[0]; if(file && file.type.startsWith('image/')){ const reader=new FileReader(); reader.onload=ev=>setImageWallpaper(ev.target.result); reader.readAsDataURL(file); } });
+        document.getElementById('iconTypeSelect').addEventListener('change', (e) => toggleIconFields(e.target.value));
+        // emoji 點擊選取
+        document.querySelectorAll('.emoji-option').forEach(emojiSpan => {
+            emojiSpan.addEventListener('click', () => { document.getElementById('customEmojiInput').value = emojiSpan.innerText; });
+        });
+    }
+    
+    function init() {
+        loadAllSettings();
+        if (!desktopShortcuts.length) { desktopShortcuts = defaultShortcuts; nextShortcutId = 100; saveAllSettings(); }
+        renderDesktopIcons(); renderShortcutManager(); renderQuickLaunch();
+        bindEvents(); initDragWindows(); updateClock(); setInterval(updateClock, 1000);
+        if (!repoConfig.projects.length) syncFromGitHub().catch(()=>{});
+        else renderRepos();
+        updateAccountDisplay();
+        document.getElementById('githubUsernameInput').value = currentGitHubUsername;
+        document.getElementById('solidColorPicker').value = "#3a6ea5";
+        window.showAbout = () => alert("雙主題儀表板\n支援 Emoji/圖片圖示、純色桌布、拖拽排序");
+    }
+    init();
+</script>
+</body>
+</html>
