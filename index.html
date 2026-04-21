@@ -194,6 +194,181 @@
         .emoji-option { font-size: 28px; cursor: pointer; padding: 5px; border-radius: 12px; transition: 0.1s; width: 48px; text-align: center; }
         .emoji-option:hover { background: #ddd; transform: scale(1.1); }
         .color-preview { width: 40px; height: 40px; border-radius: 8px; border: 1px solid #aaa; display: inline-block; vertical-align: middle; margin-left: 8px; }
+
+        /* ===== 群組樣式 ===== */
+        .icon-group {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 12px;
+            background: transparent;
+            position: relative;
+            width: 85px;
+            text-align: center;
+        }
+        .icon-group:hover .group-folder {
+            transform: scale(1.05);
+        }
+        .group-folder {
+            width: 56px;
+            height: 56px;
+            background: rgba(255,255,255,0.25);
+            border: 2px solid rgba(255,255,255,0.5);
+            border-radius: 10px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 3px;
+            padding: 4px;
+            backdrop-filter: blur(4px);
+            transition: transform 0.1s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        body.xp-theme .group-folder {
+            background: rgba(0,60,180,0.35);
+            border-color: rgba(100,160,255,0.6);
+        }
+        body.mac-theme .group-folder {
+            background: rgba(255,255,255,0.4);
+            border-color: rgba(200,200,200,0.7);
+        }
+        .group-preview-icon {
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.2);
+            overflow: hidden;
+        }
+        .group-preview-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .icon-group span {
+            display: block;
+            font-size: 12px;
+            margin-top: 6px;
+            font-weight: 500;
+            word-break: break-word;
+        }
+        body.xp-theme .icon-group span { color: white; text-shadow: 1px 1px 1px black; }
+        body.mac-theme .icon-group span { color: #1e1e1e; text-shadow: 0 1px 0 rgba(255,255,255,0.5); }
+
+        /* 群組展開彈窗 */
+        #groupPopup {
+            position: fixed;
+            z-index: 300;
+            background: rgba(30,30,40,0.88);
+            backdrop-filter: blur(24px);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.15);
+            display: none;
+            min-width: 220px;
+            max-width: 320px;
+        }
+        #groupPopup .popup-title {
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 14px;
+            opacity: 0.85;
+        }
+        #groupPopup .popup-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+        }
+        #groupPopup .popup-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 10px;
+            transition: background 0.1s;
+        }
+        #groupPopup .popup-item:hover {
+            background: rgba(255,255,255,0.15);
+        }
+        #groupPopup .popup-item .popup-icon {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            border-radius: 10px;
+        }
+        #groupPopup .popup-item img {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+            border-radius: 10px;
+        }
+        #groupPopup .popup-item span {
+            font-size: 11px;
+            color: white;
+            margin-top: 4px;
+            text-align: center;
+            word-break: break-word;
+            max-width: 72px;
+        }
+        #groupPopupOverlay {
+            position: fixed; inset: 0; z-index: 299; display: none;
+        }
+
+        /* 開始選單群組 */
+        .start-group-item {
+            padding: 0;
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+        }
+        .start-group-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.1s;
+        }
+        .start-group-header:hover { background: rgba(0,0,0,0.07); }
+        .start-group-arrow {
+            margin-left: auto;
+            font-size: 11px;
+            transition: transform 0.2s;
+            opacity: 0.6;
+        }
+        .start-group-arrow.open { transform: rotate(90deg); }
+        .start-group-children {
+            display: none;
+            padding: 0 8px 6px 32px;
+            background: rgba(0,0,0,0.04);
+        }
+        .start-group-children.open { display: block; }
+        .start-group-children .start-menu-item {
+            padding: 6px 10px;
+            font-size: 13px;
+        }
+
+        /* 群組管理列 */
+        .group-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 10px;
+            border-bottom: 1px solid #eee;
+            background: #f9f6ff;
+        }
+        .group-row span { flex: 2; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+        .group-row button { margin: 0 3px; padding: 2px 8px; font-size: 12px; }
     </style>
 </head>
 <body class="xp-theme">
@@ -230,7 +405,10 @@
             <hr>
             <p><strong>📌 桌面捷徑管理</strong> <button id="newShortcutBtn">➕ 新增捷徑</button></p>
             <div class="shortcut-manager" id="shortcutListContainer"></div>
-            <p style="font-size:12px;">💡 提示：拖拽桌面圖示排序；勾選「顯示於工作列」會出現在開始按鈕旁。捷徑圖示可使用 Emoji 或圖片網址。</p>
+            <hr>
+            <p><strong>📂 群組管理</strong> <button id="newGroupBtn">➕ 新增群組</button></p>
+            <div class="shortcut-manager" id="groupListContainer"></div>
+            <p style="font-size:12px;">💡 群組：將多個捷徑合併為一個資料夾圖示，桌面點擊展開，開始選單自動收合為子選單。</p>
             <hr>
             <p><strong>📦 匯出/匯入全部設定</strong></p>
             <button onclick="exportFullConfig()">📤 匯出設定 (JSON)</button>
@@ -279,6 +457,30 @@
 <!-- 開始選單 -->
 <div id="startMenu" class="start-menu" style="position:fixed; bottom:50px; left:0; width:260px; background:rgba(240,240,245,0.95); backdrop-filter:blur(20px); border-radius:12px; box-shadow:0 5px 20px rgba(0,0,0,0.3); z-index:250; display:none; padding:8px 0;"></div>
 
+<!-- 群組展開彈窗 -->
+<div id="groupPopupOverlay" onclick="closeGroupPopup()"></div>
+<div id="groupPopup">
+    <div class="popup-title" id="groupPopupTitle">群組名稱</div>
+    <div class="popup-grid" id="groupPopupGrid"></div>
+</div>
+
+<!-- 群組管理對話框 -->
+<div id="groupDialog" class="window" style="width: 500px; height: 560px; left: 200px; top: 120px;">
+    <div class="window-header"><span id="groupDialogTitle">📂 建立群組</span><div class="window-controls"><button class="close-btn" onclick="closeWindow('groupDialog')">✖</button></div></div>
+    <div class="window-body">
+        <div class="shortcut-form">
+            <label>群組名稱:</label>
+            <input type="text" id="editGroupName" placeholder="例如：工具箱、遊戲">
+            <label>群組 Emoji 圖示:</label>
+            <input type="text" id="editGroupEmoji" placeholder="📂" maxlength="2" style="font-size:22px; width:80px;">
+            <hr>
+            <label><strong>選擇要加入此群組的捷徑:</strong></label>
+            <div id="groupMemberCheckboxes" style="max-height:200px;overflow-y:auto;border:1px solid #ccc;border-radius:8px;padding:8px;margin:8px 0;"></div>
+            <button id="saveGroupBtn" style="margin-top:12px;">💾 儲存群組</button>
+        </div>
+    </div>
+</div>
+
 <div id="taskbar">
     <button id="start-btn">開始</button>
     <div class="quick-launch" id="quickLaunchArea"></div>
@@ -295,10 +497,12 @@
     "username": "kaojarher",
     "repoConfig": {
       "projects": [
-        "HEDIT","Mydesktop","NanoMarkRemove","ApolloGuidanceComputer","meetingroom",
-        "RPABlockly","dorotextgame","kao360","news","C11sim","Elisa1","Myphone",
-        "LeanQA","Myagent","Mdedit","Mytoolcard","Camera","flysim","utramanbattlecard",
-        "artemis2","HtmlAgent","ISS","minilooi","sha","fanranrpg","fanran","blog-content"
+        "Dor","OfficeLeanTool","Cardnote","Mingpan","FilmScaner","potocollage",
+        "NanoMarkRemove","Clunar-","officetool","Mydesktop","HEDIT",
+        "ApolloGuidanceComputer","meetingroom","RPABlockly","dorotextgame","kao360",
+        "news","C11sim","Elisa1","Myphone","LeanQA","Myagent","Mdedit","Mytoolcard",
+        "Camera","flysim","utramanbattlecard","artemis2","HtmlAgent","ISS","minilooi",
+        "sha","fanranrpg","fanran","blog-content"
       ],
       "githubUsername": "kaojarher",
       "userModified": false
@@ -318,9 +522,15 @@
     {"id":107,"name":"網路會議室","iconType":"url","icon":"https://cdn-icons-png.flaticon.com/512/17588/17588666.png","actionType":"url","actionValue":"https://kaojarher.github.io/meetingroom/","pinToTaskbar":false},
     {"id":108,"name":"瀏覽器","iconType":"url","icon":"https://images.icon-icons.com/836/PNG/512/Google_Chrome_icon-icons.com_66794.png","actionType":"url","actionValue":"https://www.google.com/","pinToTaskbar":false},
     {"id":109,"name":"NEWS","iconType":"url","icon":"https://www.citypng.com/public/uploads/preview/free-newspaper-news-icon-png-701751694975114q0xwdrzcy0.png","actionType":"url","actionValue":"https://kaojarher.github.io/news/","pinToTaskbar":false},
-    {"id":110,"name":"Instax camera","iconType":"url","icon":"https://img.favpng.com/24/18/3/instant-camera-polaroid-corporation-icon-png-favpng-LZ434LBPmEWP62kVZiYfKSimB.jpg","actionType":"url","actionValue":"https://kaojarher.github.io/Camera/","pinToTaskbar":false}
+    {"id":110,"name":"Instax camera","iconType":"url","icon":"https://img.favpng.com/24/18/3/instant-camera-polaroid-corporation-icon-png-favpng-LZ434LBPmEWP62kVZiYfKSimB.jpg","actionType":"url","actionValue":"https://kaojarher.github.io/Camera/","pinToTaskbar":false},
+    {"id":111,"name":"失落的封印","iconType":"url","icon":"https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiIS3O3_NxCLfmPXlMYwTfNKA8T1k4SrfyHIAQ-RjgU1QRamHu-t5IT7hYDvLQB05pBBjlFC4Dca-WUbbzQYIqbYAMWgueA3VYTcpLEqM4NBxBrbkhJmtAuXawVKVPDdSo4EuIg-cX7UJTX/s640/110527_90_sldfy000.jpg","actionType":"url","actionValue":"https://kaojarher.github.io/Dor/","pinToTaskbar":false}
   ],
-  "nextId": 111
+  "nextId": 112,
+  "groups": [
+    {"id":1,"name":"生產力工具","emoji":"📂","memberIds":[102,103,106,107]},
+    {"id":2,"name":"休閒娛樂","emoji":"📂","memberIds":[100,101,111]}
+  ],
+  "nextGroupId": 3
 };
 
     // ======================= 全域資料 =======================
@@ -333,6 +543,10 @@
     let wallpaperValue = null;    // 圖片URL 或 顏色值
     let editingShortcutId = null;
     let dragSrcIndex = null;
+    // 群組資料：[{ id, name, emoji, memberIds: [shortcutId,...] }]
+    let desktopGroups = [];
+    let nextGroupId = 1;
+    let editingGroupId = null;
     
     // 預設捷徑 (保留相容，但實際由 BUNDLED_CONFIG 提供)
     const defaultShortcuts = BUNDLED_CONFIG.shortcuts;
@@ -344,7 +558,9 @@
             wallpaperType, wallpaperValue,
             github: { username: currentGitHubUsername, repoConfig },
             shortcuts: desktopShortcuts,
-            nextId: nextShortcutId
+            nextId: nextShortcutId,
+            groups: desktopGroups,
+            nextGroupId: nextGroupId
         };
         localStorage.setItem('dashboard_full_config_v2', JSON.stringify(fullData));
     }
@@ -374,6 +590,11 @@
                 renderQuickLaunch();
             }
             if (data.nextId) nextShortcutId = data.nextId;
+            if (data.groups && Array.isArray(data.groups)) {
+                desktopGroups = data.groups;
+                renderGroupManager();
+            }
+            if (data.nextGroupId) nextGroupId = data.nextGroupId;
         } catch(e) { console.warn(e); }
     }
     
@@ -434,11 +655,39 @@
     }
     
     // ======================= 捷徑渲染 =======================
+    function getGroupedShortcutIds() {
+        const ids = new Set();
+        desktopGroups.forEach(g => g.memberIds.forEach(id => ids.add(id)));
+        return ids;
+    }
+
     function renderDesktopIcons() {
         const container = document.getElementById('iconsContainer');
         if (!container) return;
         container.innerHTML = '';
+        const groupedIds = getGroupedShortcutIds();
+
+        // 先渲染群組圖示
+        desktopGroups.forEach(group => {
+            const members = group.memberIds.map(id => desktopShortcuts.find(s => s.id === id)).filter(Boolean);
+            if (!members.length) return;
+            const groupDiv = document.createElement('div');
+            groupDiv.className = 'icon-group';
+            const previews = members.slice(0, 4).map(s => {
+                if (s.iconType === 'emoji') return `<div class="group-preview-icon" style="font-size:13px;">${s.icon}</div>`;
+                return `<div class="group-preview-icon"><img src="${s.icon}" onerror="this.style.display='none'"></div>`;
+            }).join('');
+            // 補足4格
+            let extra = '';
+            for (let i = members.length; i < 4; i++) extra += `<div class="group-preview-icon"></div>`;
+            groupDiv.innerHTML = `<div class="group-folder">${previews}${extra}</div><span>${escapeHtml(group.name)}</span>`;
+            groupDiv.addEventListener('click', (e) => { e.stopPropagation(); openGroupPopup(group, groupDiv); });
+            container.appendChild(groupDiv);
+        });
+
+        // 再渲染未歸組的捷徑
         desktopShortcuts.forEach((shortcut, idx) => {
+            if (groupedIds.has(shortcut.id)) return;
             const iconDiv = document.createElement('div');
             iconDiv.className = 'icon';
             iconDiv.setAttribute('draggable', 'true');
@@ -458,6 +707,118 @@
             container.appendChild(iconDiv);
         });
     }
+
+    // ===== 群組彈窗 =====
+    function openGroupPopup(group, anchorEl) {
+        const popup = document.getElementById('groupPopup');
+        const overlay = document.getElementById('groupPopupOverlay');
+        const grid = document.getElementById('groupPopupGrid');
+        const titleEl = document.getElementById('groupPopupTitle');
+        titleEl.textContent = (group.emoji || '📂') + ' ' + group.name;
+        grid.innerHTML = '';
+        const members = group.memberIds.map(id => desktopShortcuts.find(s => s.id === id)).filter(Boolean);
+        members.forEach(s => {
+            const item = document.createElement('div');
+            item.className = 'popup-item';
+            let iconHtml = '';
+            if (s.iconType === 'emoji') {
+                iconHtml = `<div class="popup-icon">${s.icon}</div>`;
+            } else {
+                iconHtml = `<img src="${s.icon}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1828/1828884.png'">`;
+            }
+            item.innerHTML = iconHtml + `<span>${escapeHtml(s.name)}</span>`;
+            item.addEventListener('click', () => { executeAction(s); closeGroupPopup(); });
+            grid.appendChild(item);
+        });
+        overlay.style.display = 'block';
+        popup.style.display = 'block';
+        const rect = anchorEl.getBoundingClientRect();
+        const pw = Math.max(popup.offsetWidth, 240);
+        const ph = Math.max(popup.offsetHeight, 160);
+        let left = rect.left + rect.width / 2 - pw / 2;
+        let top = rect.top - ph - 12;
+        if (top < 10) top = rect.bottom + 10;
+        if (left < 10) left = 10;
+        if (left + pw > window.innerWidth - 10) left = window.innerWidth - pw - 10;
+        popup.style.left = left + 'px';
+        popup.style.top = top + 'px';
+    }
+    function closeGroupPopup() {
+        document.getElementById('groupPopup').style.display = 'none';
+        document.getElementById('groupPopupOverlay').style.display = 'none';
+    }
+
+    // ===== 群組管理 UI =====
+    function renderGroupManager() {
+        const container = document.getElementById('groupListContainer');
+        if (!container) return;
+        if (!desktopGroups.length) { container.innerHTML = "<div style='padding:8px;'>尚無群組，點擊新增</div>"; return; }
+        container.innerHTML = desktopGroups.map(g => {
+            const count = g.memberIds.length;
+            return `<div class="group-row">
+                <span style="font-size:20px;">${g.emoji || '📂'}</span>
+                <span>${escapeHtml(g.name)} <small style="color:#888;">(${count} 個捷徑)</small></span>
+                <div>
+                    <button class="edit-group" data-gid="${g.id}">✏️</button>
+                    <button class="del-group" data-gid="${g.id}">🗑️</button>
+                </div>
+            </div>`;
+        }).join('');
+        document.querySelectorAll('.edit-group').forEach(btn => btn.addEventListener('click', () => openGroupDialog(parseInt(btn.getAttribute('data-gid')))));
+        document.querySelectorAll('.del-group').forEach(btn => btn.addEventListener('click', () => deleteGroupById(parseInt(btn.getAttribute('data-gid')))));
+    }
+
+    function openGroupDialog(gid = null) {
+        editingGroupId = gid;
+        document.getElementById('groupDialogTitle').innerText = gid === null ? '📂 建立群組' : '✏️ 編輯群組';
+        let currentMembers = [];
+        if (gid !== null) {
+            const g = desktopGroups.find(g => g.id === gid);
+            if (g) {
+                document.getElementById('editGroupName').value = g.name;
+                document.getElementById('editGroupEmoji').value = g.emoji || '📂';
+                currentMembers = g.memberIds;
+            }
+        } else {
+            document.getElementById('editGroupName').value = '';
+            document.getElementById('editGroupEmoji').value = '📂';
+        }
+        // 渲染成員勾選框
+        const box = document.getElementById('groupMemberCheckboxes');
+        box.innerHTML = desktopShortcuts.map(s => {
+            const checked = currentMembers.includes(s.id) ? 'checked' : '';
+            const icon = s.iconType === 'emoji' ? s.icon : '🖼️';
+            return `<label style="display:flex;align-items:center;gap:8px;padding:4px;cursor:pointer;">
+                <input type="checkbox" class="group-member-cb" value="${s.id}" ${checked}>
+                <span style="font-size:18px;">${icon}</span> ${escapeHtml(s.name)}
+            </label>`;
+        }).join('');
+        openWindow('groupDialog');
+    }
+
+    function saveGroupFromDialog() {
+        const name = document.getElementById('editGroupName').value.trim();
+        const emoji = document.getElementById('editGroupEmoji').value.trim() || '📂';
+        if (!name) { alert('請填寫群組名稱'); return; }
+        const memberIds = [...document.querySelectorAll('.group-member-cb:checked')].map(cb => parseInt(cb.value));
+        if (!memberIds.length) { alert('請至少選擇一個捷徑'); return; }
+        if (editingGroupId === null) {
+            desktopGroups.push({ id: nextGroupId++, name, emoji, memberIds });
+        } else {
+            const idx = desktopGroups.findIndex(g => g.id === editingGroupId);
+            if (idx !== -1) desktopGroups[idx] = { ...desktopGroups[idx], name, emoji, memberIds };
+        }
+        closeWindow('groupDialog');
+        renderDesktopIcons(); renderGroupManager(); saveAllSettings();
+    }
+
+    function deleteGroupById(gid) {
+        if (confirm('刪除此群組？（捷徑本身不會刪除）')) {
+            desktopGroups = desktopGroups.filter(g => g.id !== gid);
+            renderDesktopIcons(); renderGroupManager(); saveAllSettings();
+        }
+    }
+
     
     function renderShortcutManager() {
         const container = document.getElementById('shortcutListContainer');
@@ -573,13 +934,16 @@
         renderDesktopIcons();
         renderShortcutManager();
         renderQuickLaunch();
+        renderGroupManager();
         saveAllSettings();
     }
     
     function deleteShortcutById(id) {
         if (confirm("刪除此捷徑？")) {
             desktopShortcuts = desktopShortcuts.filter(s => s.id !== id);
-            renderDesktopIcons(); renderShortcutManager(); renderQuickLaunch(); saveAllSettings();
+            // 同時從所有群組中移除
+            desktopGroups.forEach(g => { g.memberIds = g.memberIds.filter(mid => mid !== id); });
+            renderDesktopIcons(); renderShortcutManager(); renderQuickLaunch(); renderGroupManager(); saveAllSettings();
         }
     }
     
@@ -601,7 +965,7 @@
             const moved = desktopShortcuts[dragSrcIndex];
             desktopShortcuts.splice(dragSrcIndex, 1);
             desktopShortcuts.splice(destIndex, 0, moved);
-            renderDesktopIcons(); renderShortcutManager(); renderQuickLaunch(); saveAllSettings();
+            renderDesktopIcons(); renderShortcutManager(); renderQuickLaunch(); renderGroupManager(); saveAllSettings();
         }
     }
     function handleDragEnd(e) { if(e.target.closest('.icon')) e.target.closest('.icon').classList.remove('dragging'); dragSrcIndex = null; }
@@ -639,7 +1003,34 @@
         const menu = document.getElementById('startMenu');
         menu.innerHTML = `<div class="start-menu-item" onclick="openWindow('repo-window'); closeStartMenu();"><span>📁</span> GitHub 倉庫</div>
                           <div class="start-menu-item" onclick="openWindow('settings-window'); closeStartMenu();"><span>⚙️</span> 系統設定</div><hr>`;
-        desktopShortcuts.forEach(short => {
+        const groupedIds = getGroupedShortcutIds();
+
+        // 渲染群組（可折疊）
+        desktopGroups.forEach(group => {
+            const members = group.memberIds.map(id => desktopShortcuts.find(s => s.id === id)).filter(Boolean);
+            if (!members.length) return;
+            const gid = 'smg-' + group.id;
+            const groupItem = document.createElement('div');
+            groupItem.className = 'start-group-item';
+            groupItem.innerHTML = `
+                <div class="start-group-header" onclick="toggleStartGroup('${gid}')">
+                    <span style="font-size:18px;">${group.emoji || '📂'}</span>
+                    <span>${escapeHtml(group.name)}</span>
+                    <span class="start-group-arrow" id="arrow-${gid}">▶</span>
+                </div>
+                <div class="start-group-children" id="${gid}">
+                    ${members.map(s => `
+                        <div class="start-menu-item" onclick="executeStartMenuShortcut(${s.id})">
+                            <span style="font-size:18px;">${s.iconType === 'emoji' ? s.icon : '🖼️'}</span> ${escapeHtml(s.name)}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            menu.appendChild(groupItem);
+        });
+
+        // 渲染未歸組捷徑
+        desktopShortcuts.filter(s => !groupedIds.has(s.id)).forEach(short => {
             const div = document.createElement('div');
             div.className = 'start-menu-item';
             div.innerHTML = `<span style="font-size:20px;">${short.iconType === 'emoji' ? short.icon : '🖼️'}</span> ${escapeHtml(short.name)}`;
@@ -647,12 +1038,31 @@
             menu.appendChild(div);
         });
     }
+    function toggleStartGroup(gid) {
+        const children = document.getElementById(gid);
+        const arrow = document.getElementById('arrow-' + gid);
+        if (!children) return;
+        const isOpen = children.classList.toggle('open');
+        if (arrow) arrow.classList.toggle('open', isOpen);
+    }
+    function executeStartMenuShortcut(id) {
+        const s = desktopShortcuts.find(s => s.id === id);
+        if (s) { executeAction(s); closeStartMenu(); }
+    }
     function toggleStartMenu() { const m = document.getElementById('startMenu'); if (m.style.display === 'block') m.style.display = 'none'; else { buildStartMenu(); m.style.display = 'block'; } }
     function closeStartMenu() { document.getElementById('startMenu').style.display = 'none'; }
     
     // 匯入匯出
     function exportFullConfig() {
-        const data = { theme: currentTheme, wallpaperType, wallpaperValue, github: { username: currentGitHubUsername, repoConfig }, shortcuts: desktopShortcuts, nextId: nextShortcutId };
+        const data = {
+            theme: currentTheme,
+            wallpaperType, wallpaperValue,
+            github: { username: currentGitHubUsername, repoConfig },
+            shortcuts: desktopShortcuts,
+            nextId: nextShortcutId,
+            groups: desktopGroups,
+            nextGroupId: nextGroupId
+        };
         const a = document.createElement('a');
         a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type: "application/json"}));
         a.download = "dashboard_full.json";
@@ -668,8 +1078,11 @@
                 if (data.theme) setTheme(data.theme, false);
                 if (data.wallpaperType && data.wallpaperValue) { wallpaperType = data.wallpaperType; wallpaperValue = data.wallpaperValue; applyWallpaperFromState(); }
                 if (data.github) { currentGitHubUsername = data.github.username; repoConfig = data.github.repoConfig; renderRepos(); updateAccountDisplay(); }
-                if (data.shortcuts) { desktopShortcuts = data.shortcuts; renderDesktopIcons(); renderShortcutManager(); renderQuickLaunch(); }
+                if (data.shortcuts) { desktopShortcuts = data.shortcuts; }
                 if (data.nextId) nextShortcutId = data.nextId;
+                if (data.groups && Array.isArray(data.groups)) { desktopGroups = data.groups; } else { desktopGroups = []; }
+                if (data.nextGroupId) nextGroupId = data.nextGroupId;
+                renderDesktopIcons(); renderShortcutManager(); renderQuickLaunch(); renderGroupManager();
                 saveAllSettings();
                 alert("匯入成功"); location.reload();
             } catch(err) { alert("格式錯誤"); }
@@ -694,6 +1107,8 @@
         document.getElementById('manualSyncBtn').onclick = () => syncFromGitHub();
         document.getElementById('newShortcutBtn').onclick = () => openEditDialog(null);
         document.getElementById('saveShortcutBtn').onclick = () => saveShortcutFromDialog();
+        document.getElementById('newGroupBtn').onclick = () => openGroupDialog(null);
+        document.getElementById('saveGroupBtn').onclick = () => saveGroupFromDialog();
         document.getElementById('start-btn').onclick = (e) => { e.stopPropagation(); toggleStartMenu(); };
         document.addEventListener('click', (e) => { if(!e.target.closest('#start-btn') && !e.target.closest('.start-menu')) closeStartMenu(); });
         document.getElementById('wallpaperUpload').addEventListener('change', (e) => { const file=e.target.files[0]; if(file && file.type.startsWith('image/')){ const reader=new FileReader(); reader.onload=ev=>setImageWallpaper(ev.target.result); reader.readAsDataURL(file); } });
@@ -705,7 +1120,7 @@
     }
     
     // 內嵌設定版本號，修改 BUNDLED_CONFIG 時請同步更新此值
-    const BUNDLED_VERSION = "v2025-04-16-1";
+    const BUNDLED_VERSION = "v2025-04-21-2";
 
     function applyConfig(data) {
         if (data.theme) setTheme(data.theme, false);
@@ -723,6 +1138,10 @@
             desktopShortcuts = data.shortcuts;
         }
         if (data.nextId) nextShortcutId = data.nextId;
+        if (data.groups && Array.isArray(data.groups)) {
+            desktopGroups = data.groups;
+        }
+        if (data.nextGroupId) nextGroupId = data.nextGroupId;
     }
 
     function init() {
@@ -745,7 +1164,7 @@
         }
 
         if (!desktopShortcuts.length) { desktopShortcuts = defaultShortcuts; nextShortcutId = BUNDLED_CONFIG.nextId || 111; saveAllSettings(); }
-        renderDesktopIcons(); renderShortcutManager(); renderQuickLaunch();
+        renderDesktopIcons(); renderShortcutManager(); renderQuickLaunch(); renderGroupManager();
         bindEvents(); initDragWindows(); updateClock(); setInterval(updateClock, 1000);
         if (!repoConfig.projects.length) syncFromGitHub().catch(()=>{});
         else renderRepos();
