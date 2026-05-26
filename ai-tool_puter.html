@@ -404,9 +404,21 @@ async function runQuery() {
     statusTag.className   = 'status-tag status-ok';
     tokenBar.innerHTML    = `<span>模型: ${model}</span><span>耗時: ${elapsed}s</span>`;
 
+    // ── 方案三：localStorage 橋接回傳（MyDesktop 主頁監聽用）──
+    const callbackMode = new URLSearchParams(location.search).get('callback');
+    if (callbackMode === 'localstorage') {
+      localStorage.setItem('ai_result', JSON.stringify({
+        content: fullText,
+        model: model,
+        timestamp: Date.now()
+      }));
+    }
+
     // postMessage 回傳（相容原版 opener 架構）
     if (window.opener) {
-      window.opener.postMessage({ type: 'AI_RESULT_COMPLETE', content: fullText, model }, '*');
+      try {
+        window.opener.postMessage({ type: 'AI_RESULT_COMPLETE', content: fullText, model }, '*');
+      } catch(e) {}
     }
 
   } catch (err) {
