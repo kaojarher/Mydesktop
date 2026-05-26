@@ -1226,92 +1226,106 @@
     init();
 
 	// ─────────────────────────────────────────────────────────────
-	// askGemini()：用 URL 參數開啟 Gemini 頁，並以 localStorage 橋接回傳
+	// AI 管家核心
 	// ─────────────────────────────────────────────────────────────
 	const GEMINI_PAGE_URL = 'https://kaojarher.github.io/NotebookLLM/ai-tool_puter.html';
-	const AI_SYSTEM_PROMPT = '你是桌面管家，當使用者想開啟某個應用程式時，回覆末尾請加上 [OPEN: 應用名稱]（應用名稱請與桌面捷徑完全相符）';
+	const AI_SYSTEM_PROMPT = '你是桌面管家。當使用者要開啟應用程式時，你的回覆最後一行必須是 [OPEN: 應用名稱]，應用名稱需與以下清單完全一致：' + (() => desktopShortcuts.map(s=>s.name).join('、'))();
+
+	// 顯示 AI 狀態浮動提示
+	function showAiToast(msg, color) {
+		let toast = document.getElementById('ai-toast');
+		if (!toast) {
+			toast = document.createElement('div');
+			toast.id = 'ai-toast';
+			toast.style.cssText = 'position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 22px;border-radius:20px;font-size:14px;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.4);transition:opacity 0.3s;';
+			document.body.appendChild(toast);
+		}
+		toast.style.borderLeft = '4px solid ' + (color || '#4f9cf9');
+		toast.style.opacity = '1';
+		toast.textContent = msg;
+		clearTimeout(toast._timer);
+		toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 4000);
+	}
 
 	function askGemini(promptText) {
-		// 若沒傳入提示詞，用 prompt() 詢問使用者
 		const userPrompt = promptText || window.prompt('🤖 請輸入您想問 AI 管家的問題：');
 		if (!userPrompt) return;
 
-		// 埋旗標，讓 Gemini 頁知道有待處理任務
-		localStorage.setItem('ai_pending', JSON.stringify({
-			id: Date.now(),
-			status: 'waiting'
-		}));
-
-		// 清除舊結果，避免誤觸
+		// 清除舊結果
 		localStorage.removeItem('ai_result');
+
+		const sysPrompt = '你是桌面管家。當使用者要開啟應用程式時，你的回覆最後一行必須是 [OPEN: 應用名稱]，應用名稱需與以下清單完全一致：' + desktopShortcuts.map(s=>s.name).join('、');
 
 		const params = new URLSearchParams({
 			prompt: userPrompt,
-			system: AI_SYSTEM_PROMPT,
+			system: sysPrompt,
 			autorun: '1',
-			callback: 'localstorage'  // 告知 Gemini 頁使用 localStorage 回傳
+			callback: 'localstorage'
 		});
 
-		// 開啟 Gemini 視窗
-		window.open(`${GEMINI_PAGE_URL}?${params}`, '_blank', 'width=820,height=640');
+		const aiWin = window.open(`${GEMINI_PAGE_URL}?${params}`, '_blank', 'width=820,height=640');
+		showAiToast('🤖 AI 思考中，請稍候...', '#4f9cf9');
 
-		// ── 雙保險：storage 事件 + 輪詢 ──
-		// storage 事件在同域跨分頁有效；輪詢作為後備保證不漏接
+		// 雙保險：storage 事件 + 輪詢
 		let pollTimer = null;
 		let pollCount = 0;
+		let done = false;
 
-		function checkAiResult() {
-			const raw = localStorage.getItem('ai_result');
-			if (!raw) return;
+		function finish(raw) {
+			if (done) return;
+			done = true;
+			clearInterval(pollTimer);
+			window.removeEventListener('storage', storageHandler);
+			localStorage.removeItem('ai_result');
 			try {
 				const result = JSON.parse(raw);
 				handleAiResult(result.content);
 			} catch(err) {
-				console.warn('AI 結果解析失敗', err);
+				showAiToast('❌ AI 結果解析失敗：' + err.message, '#ef4444');
 			}
-			localStorage.removeItem('ai_result');
-			localStorage.removeItem('ai_pending');
-			cleanupAiListener();
-		}
-
-		function cleanupAiListener() {
-			clearInterval(pollTimer);
-			window.removeEventListener('storage', storageHandler);
 		}
 
 		function storageHandler(e) {
-			if (e.key === 'ai_result' && e.newValue) checkAiResult();
+			if (e.key === 'ai_result' && e.newValue) finish(e.newValue);
 		}
-
 		window.addEventListener('storage', storageHandler);
-		// 每 800ms 主動檢查一次，最多等 3 分鐘（225次）
+
 		pollTimer = setInterval(() => {
-			checkAiResult();
-			if (++pollCount > 225) cleanupAiListener();
+			if (done) { clearInterval(pollTimer); return; }
+			const raw = localStorage.getItem('ai_result');
+			if (raw) { finish(raw); return; }
+			if (++pollCount > 225) {
+				clearInterval(pollTimer);
+				window.removeEventListener('storage', storageHandler);
+				showAiToast('⏰ AI 等待逾時，請重試', '#f59e0b');
+			}
 		}, 800);
 	}
 
 	// ─────────────────────────────────────────────────────────────
-	// handleAiResult()：解析 AI 回傳內容，執行 [OPEN: xxx] 指令
+	// handleAiResult()：解析 [OPEN: xxx] 並執行，模糊比對捷徑名稱
 	// ─────────────────────────────────────────────────────────────
 	function handleAiResult(fullText) {
-		if (!fullText) return;
-		console.log('✅ AI 管家回傳內容：', fullText);
+		if (!fullText) { showAiToast('⚠️ AI 回傳空白', '#f59e0b'); return; }
+		console.log('✅ AI 回傳：', fullText);
 
-		const match = fullText.match(/\[OPEN:\s*(.*?)\]/);
+		const match = fullText.match(/\[OPEN:\s*([^\]]+)\]/);
 		if (match && match[1]) {
 			const appName = match[1].trim();
-			const target = desktopShortcuts.find(s => s.name === appName);
+			// 先精確比對，再模糊（contains）
+			let target = desktopShortcuts.find(s => s.name === appName);
+			if (!target) target = desktopShortcuts.find(s => s.name.includes(appName) || appName.includes(s.name));
 			if (target) {
 				executeAction(target);
-				if (typeof showStatus === 'function') showStatus(`🤖 AI 已幫您開啟：${appName}`);
+				showAiToast(`✅ 已開啟：${target.name}`, '#10b981');
+				if (typeof showStatus === 'function') showStatus(`🤖 AI 已幫您開啟：${target.name}`);
 			} else {
-				console.warn(`⚠️ 未找到名為 "${appName}" 的捷徑`);
-				if (typeof showStatus === 'function') showStatus(`⚠️ 找不到應用：${appName}`);
+				showAiToast(`⚠️ 找不到「${appName}」，請確認捷徑名稱`, '#f59e0b');
+				console.warn('可用捷徑：', desktopShortcuts.map(s=>s.name));
 			}
 		} else {
-			// 沒有 OPEN 指令，只是一般對話，顯示於狀態列
-			if (typeof showStatus === 'function') showStatus('🤖 AI：' + fullText.substring(0, 60) + (fullText.length > 60 ? '...' : ''));
+			// 沒有 OPEN 指令，顯示 AI 回覆
+			showAiToast('🤖 ' + fullText.substring(0, 50) + (fullText.length > 50 ? '...' : ''), '#4f9cf9');
 		}
 	}
 </script>
