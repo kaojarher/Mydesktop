@@ -1255,21 +1255,40 @@
 		// 開啟 Gemini 視窗
 		window.open(`${GEMINI_PAGE_URL}?${params}`, '_blank', 'width=820,height=640');
 
-		// 監聽 localStorage 變化（跨分頁事件）
-		function storageHandler(e) {
-			if (e.key === 'ai_result' && e.newValue) {
-				try {
-					const result = JSON.parse(e.newValue);
-					handleAiResult(result.content);
-				} catch(err) {
-					console.warn('AI 結果解析失敗', err);
-				}
-				localStorage.removeItem('ai_result');
-				localStorage.removeItem('ai_pending');
-				window.removeEventListener('storage', storageHandler);
+		// ── 雙保險：storage 事件 + 輪詢 ──
+		// storage 事件在同域跨分頁有效；輪詢作為後備保證不漏接
+		let pollTimer = null;
+		let pollCount = 0;
+
+		function checkAiResult() {
+			const raw = localStorage.getItem('ai_result');
+			if (!raw) return;
+			try {
+				const result = JSON.parse(raw);
+				handleAiResult(result.content);
+			} catch(err) {
+				console.warn('AI 結果解析失敗', err);
 			}
+			localStorage.removeItem('ai_result');
+			localStorage.removeItem('ai_pending');
+			cleanupAiListener();
 		}
+
+		function cleanupAiListener() {
+			clearInterval(pollTimer);
+			window.removeEventListener('storage', storageHandler);
+		}
+
+		function storageHandler(e) {
+			if (e.key === 'ai_result' && e.newValue) checkAiResult();
+		}
+
 		window.addEventListener('storage', storageHandler);
+		// 每 800ms 主動檢查一次，最多等 3 分鐘（225次）
+		pollTimer = setInterval(() => {
+			checkAiResult();
+			if (++pollCount > 225) cleanupAiListener();
+		}, 800);
 	}
 
 	// ─────────────────────────────────────────────────────────────
