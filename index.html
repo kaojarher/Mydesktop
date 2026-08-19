@@ -1,1080 +1,1425 @@
-<!doctype html>
-<html lang="zh-Hant">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="theme-color" content="#e9f4fb">
-<title>萌獸卡牌 · 響應式卡牌手遊</title>
-<style>
-:root{
-  --bg:#edf7fc;--panel:#f8fcff;--panel2:#e5f1f8;--ink:#26384d;--muted:#70839a;
-  --line:#cddce8;--blue:#6c91ba;--blue2:#385879;--pink:#ef8fb0;--green:#78b85e;
-  --gold:#e5bd55;--shadow:0 10px 28px rgba(62,101,135,.18);
-  --r:22px;--nav:74px
-}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;padding:0;background:linear-gradient(180deg,#eaf5fb,#f6fbfe 48%,#e9f5fb);color:var(--ink);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Noto Sans TC","Microsoft JhengHei",sans-serif}
-body{min-height:100vh}
-button,input,select{font:inherit}
-button{border:0;cursor:pointer;color:inherit}
-.app{width:min(100%,900px);margin:auto;min-height:100vh;background:linear-gradient(180deg,#eef8fd,#f7fbfd);box-shadow:0 0 45px rgba(43,83,116,.13);position:relative}
-.topbar{height:72px;display:flex;align-items:center;justify-content:center;position:sticky;top:0;z-index:30;background:rgba(239,249,254,.94);backdrop-filter:blur(14px);border-bottom:1px solid #d4e2ed}
-.topbar h1{font-size:26px;margin:0;font-weight:900;letter-spacing:2px}
-.help{position:absolute;right:18px;width:44px;height:44px;border:3px solid #8aa6c3;border-radius:50%;background:#fff8;color:#6e88a3;font-weight:900;font-size:26px}
-.gradient-line{height:5px;background:linear-gradient(90deg,#ff9b74,#f27eb6,#9e8be8,#78b8e6)}
-main{padding:18px 18px calc(var(--nav) + 25px)}
-.page{display:none}.page.active{display:block}
-.hero{border-radius:28px;background:linear-gradient(135deg,#fff,#e9e9fb 50%,#e7f6f8);padding:20px;box-shadow:var(--shadow);border:1px solid #fff;position:relative;overflow:hidden}
-.hero:after{content:"";position:absolute;width:190px;height:190px;border-radius:50%;right:-70px;top:-75px;background:#fff8}
-.hero h2{margin:0;font-size:28px}.hero p{margin:6px 0;color:var(--muted);font-size:16px}
-.statrow{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:15px}
-.stat{background:#ffffffb8;border:1px solid #fff;border-radius:16px;padding:10px;text-align:center}
-.stat b{display:block;font-size:20px}.stat span{font-size:13px;color:var(--muted);font-weight:bold}
-.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}
-.tab{height:76px;border-radius:18px;background:linear-gradient(145deg,#fff,#e8f1f8);box-shadow:0 7px 17px #7799b51c;border:1px solid #fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#667b91}
-.tab .ico{font-size:30px}.tab b{font-size:15px}.tab.active{background:linear-gradient(145deg,#e8f3ff,#dce9f7);color:#2e4e70;box-shadow:inset 0 0 0 2px #a9c7e3,0 8px 18px #7898b633}
-.toolbar{display:flex;align-items:center;gap:10px;background:#f4fbff;border:1px solid #fff;border-radius:20px;padding:12px;box-shadow:var(--shadow);margin-bottom:16px}
-.search{flex:1;position:relative}.search input{width:100%;height:48px;border:1px solid #d4e1eb;background:white;border-radius:14px;padding:0 42px 0 13px;outline:none;color:var(--ink);font-size:16px}
-.search span{position:absolute;right:12px;top:10px;font-size:25px;color:#8299ad}
-.select{height:48px;border:1px solid #d4e1eb;border-radius:14px;background:white;padding:0 10px;color:#526a82;font-size:16px}
-.pill{padding:10px 14px;border-radius:999px;background:#e7eff7;color:#526c86;font-size:14px;font-weight:800}
-.pill.on{background:#567899;color:#fff}
-.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
-.card{background:linear-gradient(150deg,#fff,#edf6fb);border-radius:18px;padding:10px;box-shadow:0 8px 19px rgba(65,97,122,.18);border:1px solid #fff;position:relative;overflow:hidden;transition:.15s}
-@keyframes cardPopIn{0%{opacity:0;transform:scale(.5) translateY(16px) rotate(-4deg)}55%{opacity:1;transform:scale(1.08) translateY(-3px) rotate(1deg)}100%{opacity:1;transform:scale(1) translateY(0) rotate(0)}}
-@keyframes cardGlowPulse{0%,100%{box-shadow:0 8px 19px rgba(65,97,122,.18),0 0 0 0 #e5bd5500}50%{box-shadow:0 8px 19px rgba(65,97,122,.18),0 0 0 7px #e5bd5566}}
-.card.just-added{animation:cardPopIn .5s cubic-bezier(.2,.9,.25,1) both,cardGlowPulse 1.3s ease-in-out .5s 2}
-.new-ribbon{position:absolute;top:7px;left:7px;background:#ffe2b0;color:#a3661c;font-size:12px;font-weight:900;border-radius:8px;padding:3px 9px;z-index:3;animation:cardPopIn .4s .15s both}
-.setup-pick{position:absolute;top:7px;left:7px;background:#e5bd55;color:#5c4413;font-size:12px;font-weight:900;border-radius:8px;padding:3px 9px;z-index:3}
-.setup-pick.bench{background:#bfe3c8;color:#1f5c34}
-.card.setup-active{outline:3px solid #e5bd55;outline-offset:-3px}
-.card.setup-bench{outline:3px solid #78b85e;outline-offset:-3px}
-.card:active{transform:scale(1.03)}
-.card-top{height:28px;display:flex;justify-content:space-between;align-items:center;padding:0 4px;font-size:14px;font-weight:900}
-.hp{color:#4d647b;font-size:15px}.element{width:20px;height:20px;border-radius:50%;display:inline-grid;place-items:center;color:#fff;font-size:12px;background:#7ab95c}
+<!DOCTYPE html>
+<!-- saved from url=(0038)https://kaojarher.github.io/Mydesktop/ -->
+<html lang="zh-TW"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Mydesktop應用桌面V0</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, "Segoe UI", "Tahoma", "Helvetica Neue", sans-serif;
+            user-select: none;
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            transition: background-color 0.2s, background-image 0.2s;
+        }
+        /* 桌面區域 */
+        #desktop {
+            position: relative;
+            height: calc(100% - 50px);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            gap: 20px;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        .desktop-icons-container {
+            display: flex;
+            flex-direction: column;
+            flex-wrap: wrap;
+            gap: 20px;
+            height: 100%;
+        }
+        .icon {
+            width: 85px;
+            text-align: center;
+            cursor: grab;
+            transition: 0.05s linear;
+            padding: 6px;
+            border-radius: 8px;
+            background: transparent;
+            position: relative;
+        }
+        .icon:active { cursor: grabbing; }
+        .icon.dragging { opacity: 0.5; }
+        .icon .icon-img {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            pointer-events: none;
+        }
+        .icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.3));
+        }
+        .icon span {
+            display: block;
+            font-size: 12px;
+            margin-top: 6px;
+            font-weight: 500;
+            word-break: break-word;
+        }
+        body.xp-theme .icon span { color: white; text-shadow: 1px 1px 1px black; }
+        body.mac-theme .icon span { color: #1e1e1e; text-shadow: 0 1px 0 rgba(255,255,255,0.5); }
 
-.art{height:160px;border-radius:12px;display:grid;place-items:center;position:relative;overflow:hidden;border:2px solid #d4dfbf;background:linear-gradient(145deg,#d8f0a9,#86bf64)}
-.art:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 25% 20%,#ffffff80 0 8%,transparent 9%),radial-gradient(circle at 75% 70%,#ffffff42 0 10%,transparent 11%);opacity:.8}
-.art .emoji{font-size:85px;filter:drop-shadow(0 5px 4px #42602a66);z-index:1;display:flex;align-items:center;justify-content:center}
+        /* 視窗樣式 (簡化，沿用之前) */
+        .window {
+            position: absolute;
+            min-width: 300px;
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            display: none;
+            flex-direction: column;
+            z-index: 100;
+        }
+        .window-header {
+            height: 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 10px;
+            font-weight: bold;
+            cursor: move;
+            border-top-left-radius: inherit;
+            border-top-right-radius: inherit;
+        }
+        .window-controls button {
+            width: 28px;
+            height: 24px;
+            border: none;
+            border-radius: 6px;
+            background: rgba(0,0,0,0.2);
+            cursor: pointer;
+            margin-left: 6px;
+        }
+        .close-btn { background: #ff5f5f; color: white; }
+        .window-body {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            background: white;
+            border-radius: 0 0 10px 10px;
+        }
+        body.xp-theme .window {
+            border: 3px solid #0058e6;
+            border-radius: 8px 8px 0 0;
+            background: #ece9d8;
+        }
+        body.xp-theme .window-header {
+            background: linear-gradient(to bottom, #0058e6 0%, #0869f6 4%, #005ad9 6%, #005ad9 90%, #0030ad 100%);
+            color: white;
+        }
+        body.mac-theme .window {
+            background: rgba(245, 245, 247, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.6);
+            border-radius: 12px;
+        }
+        body.mac-theme .window-header {
+            background: rgba(240, 240, 245, 0.7);
+            color: #1c1c1e;
+            border-bottom: 1px solid #ccc;
+        }
+        /* 工作列 */
+        #taskbar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            z-index: 200;
+        }
+        body.xp-theme #taskbar {
+            background: linear-gradient(to bottom, #245edb 0%, #3f8cf3 9%, #245edb 18%, #245edb 92%, #1941a5 100%);
+            border-top: 1px solid #3f9cff;
+        }
+        body.mac-theme #taskbar {
+            background: rgba(255,255,255,0.75);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(0,0,0,0.1);
+            padding: 0 20px;
+        }
+        #start-btn {
+            font-weight: bold;
+            cursor: pointer;
+            padding: 0 18px;
+            height: 80%;
+            border-radius: 12px;
+            border: none;
+        }
+        body.xp-theme #start-btn {
+            background: linear-gradient(to bottom, #388e3c, #4caf50);
+            color: white;
+            font-style: italic;
+            border-radius: 0 12px 12px 0;
+        }
+        body.mac-theme #start-btn {
+            background: #2e2e32;
+            color: white;
+            font-weight: 600;
+        }
+        .quick-launch { display: flex; gap: 6px; margin-left: 12px; align-items: center; height: 100%; }
+        .quick-launch-item {
+            width: 36px; height: 36px; cursor: pointer; background: rgba(0,0,0,0.2);
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
+        }
+        .quick-launch-item img, .quick-launch-item .emoji-icon { width: 28px; height: 28px; font-size: 24px; text-align: center; }
+        .taskbar-time { margin-left: auto; margin-right: 20px; font-size: 14px; }
+        body.xp-theme .taskbar-time { color: white; }
+        body.mac-theme .taskbar-time { color: #1c1c1e; }
 
-/* CSS Sprite */
-.art-sprite {
-  display: inline-block;
-  width: 1.8em; 
-  height: 1.8em;
-  background-image: url('image_14.png');
-  background-repeat: no-repeat;
-  background-size: 500% 400%;
-  vertical-align: middle;
-  filter: drop-shadow(0 5px 4px #42602a66);
-  z-index: 1;
-}
+        /* 表單與管理區 */
+        .shortcut-form input, .shortcut-form select { width: 100%; margin: 8px 0; padding: 8px; border-radius: 6px; border: 1px solid #aaa; }
+        .repo-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px,1fr)); gap: 12px; }
+        .repo-item { border: 1px solid #b9c9e5; padding: 10px; text-align: center; border-radius: 12px; text-decoration: none; background: #f8faff; }
+        .shortcut-manager { max-height: 200px; overflow-y: auto; border: 1px solid #ccc; border-radius: 8px; margin: 10px 0; }
+        .shortcut-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; border-bottom: 1px solid #eee; }
+        .shortcut-row span { flex: 2; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+        .shortcut-row button { margin: 0 4px; padding: 2px 8px; font-size: 12px; }
+        .emoji-picker { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0; padding: 8px; background: #f5f5f5; border-radius: 12px; }
+        .emoji-option { font-size: 28px; cursor: pointer; padding: 5px; border-radius: 12px; transition: 0.1s; width: 48px; text-align: center; }
+        .emoji-option:hover { background: #ddd; transform: scale(1.1); }
+        .color-preview { width: 40px; height: 40px; border-radius: 8px; border: 1px solid #aaa; display: inline-block; vertical-align: middle; margin-left: 8px; }
 
-.spr-ciweimei     { background-position: 0% 0%; }
-.spr-jiaqiaoxiong  { background-position: 25% 0%; }
-.spr-shoulifengdie { background-position: 50% 0%; }
-.spr-jujiashou     { background-position: 75% 0%; }
-.spr-yankaishou    { background-position: 100% 0%; }
+        /* ===== 群組樣式 ===== */
+        .icon-group {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 12px;
+            background: transparent;
+            position: relative;
+            width: 85px;
+            text-align: center;
+        }
+        .icon-group:hover .group-folder {
+            transform: scale(1.05);
+        }
+        .group-folder {
+            width: 56px;
+            height: 56px;
+            background: rgba(255,255,255,0.25);
+            border: 2px solid rgba(255,255,255,0.5);
+            border-radius: 10px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 3px;
+            padding: 4px;
+            backdrop-filter: blur(4px);
+            transition: transform 0.1s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        body.xp-theme .group-folder {
+            background: rgba(0,60,180,0.35);
+            border-color: rgba(100,160,255,0.6);
+        }
+        body.mac-theme .group-folder {
+            background: rgba(255,255,255,0.4);
+            border-color: rgba(200,200,200,0.7);
+        }
+        .group-preview-icon {
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.2);
+            overflow: hidden;
+        }
+        .group-preview-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .icon-group span {
+            display: block;
+            font-size: 12px;
+            margin-top: 6px;
+            font-weight: 500;
+            word-break: break-word;
+        }
+        body.xp-theme .icon-group span { color: white; text-shadow: 1px 1px 1px black; }
+        body.mac-theme .icon-group span { color: #1e1e1e; text-shadow: 0 1px 0 rgba(255,255,255,0.5); }
 
-.spr-chushoubaihe  { background-position: 0% 33.3333%; }
-.spr-yaolanbaihe   { background-position: 25% 33.3333%; }
-.spr-fengfashi     { background-position: 50% 33.3333%; }
-.spr-sanmifeng     { background-position: 75% 33.3333%; }
-.spr-yinxiangfeng  { background-position: 100% 33.3333%; }
+        /* 群組展開彈窗 */
+        #groupPopup {
+            position: fixed;
+            z-index: 300;
+            background: rgba(30,30,40,0.88);
+            backdrop-filter: blur(24px);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.15);
+            display: none;
+            min-width: 220px;
+            max-width: 320px;
+        }
+        #groupPopup .popup-title {
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 14px;
+            opacity: 0.85;
+        }
+        #groupPopup .popup-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+        }
+        #groupPopup .popup-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 10px;
+            transition: background 0.1s;
+        }
+        #groupPopup .popup-item:hover {
+            background: rgba(255,255,255,0.15);
+        }
+        #groupPopup .popup-item .popup-icon {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            border-radius: 10px;
+        }
+        #groupPopup .popup-item img {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+            border-radius: 10px;
+        }
+        #groupPopup .popup-item span {
+            font-size: 11px;
+            color: white;
+            margin-top: 4px;
+            text-align: center;
+            word-break: break-word;
+            max-width: 72px;
+        }
+        #groupPopupOverlay {
+            position: fixed; inset: 0; z-index: 299; display: none;
+        }
 
-.spr-canglanshou   { background-position: 0% 66.6667%; }
-.spr-xiaomingxi    { background-position: 25% 66.6667%; }
-.spr-poyelun       { background-position: 50% 66.6667%; }
-.spr-rongyangui    { background-position: 75% 66.6667%; }
-.spr-huoyanhu      { background-position: 100% 66.6667%; }
+        /* 開始選單群組 */
+        .start-group-item {
+            padding: 0;
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+        }
+        .start-group-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.1s;
+        }
+        .start-group-header:hover { background: rgba(0,0,0,0.07); }
+        .start-group-arrow {
+            margin-left: auto;
+            font-size: 11px;
+            transition: transform 0.2s;
+            opacity: 0.6;
+        }
+        .start-group-arrow.open { transform: rotate(90deg); }
+        .start-group-children {
+            display: none;
+            padding: 0 8px 6px 32px;
+            background: rgba(0,0,0,0.04);
+        }
+        .start-group-children.open { display: block; }
+        .start-group-children .start-menu-item {
+            padding: 6px 10px;
+            font-size: 13px;
+        }
 
-.spr-shuidilu      { background-position: 0% 100%; }
-.spr-yueyingmao    { background-position: 25% 100%; }
-.spr-xingyuniao    { background-position: 50% 100%; }
-.spr-leijiaoyang   { background-position: 75% 100%; }
-.spr-huaguanlu     { background-position: 100% 100%; }
-
-.card-name{font-weight:900;font-size:16px;margin:6px 3px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.move{font-size:13px;color:#516375;margin:3px 3px 6px;min-height:28px;font-weight:600}
-.card-bottom{display:flex;justify-content:space-between;align-items:center;font-size:13px}
-.badge{background:#465e78;color:white;border-radius:8px 8px 0 0;padding:5px 11px;font-size:15px;font-weight:900;margin-left:-1px}
-.badge.dup{background:#e5bd55;color:#5c4413;font-size:13px;padding:5px 10px}
-.rarity{font-size:12px;color:#bd8d2b;font-weight:900}.fav{position:absolute;right:7px;top:7px;background:#ffffffcc;border-radius:50%;width:30px;height:30px;font-size:18px}
-.empty{padding:35px;text-align:center;color:var(--muted);grid-column:1/-1;font-size:16px}
-.section-title{display:flex;justify-content:space-between;align-items:center;margin:20px 2px 10px}.section-title h3{margin:0;font-size:20px}.section-title span{font-size:14px;color:var(--muted)}
-.btn{border-radius:14px;padding:12px 18px;font-weight:900;font-size:15px;background:#58799a;color:white;box-shadow:0 6px 13px #58799a30}.btn.light{background:#fff;color:#58718b;border:1px solid #d6e4ee}.btn.gold{background:linear-gradient(135deg,#e5bd58,#c99728);color:white}.btn.pink{background:linear-gradient(135deg,#f49bb6,#d9799a)}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.mini-panel{background:#fff;border:1px solid #e1edf4;border-radius:18px;padding:16px;box-shadow:0 7px 17px #6689a21c}
-.mini-panel h4{margin:0 0 6px;font-size:16px}.mini-panel p{margin:4px 0;color:var(--muted);font-size:14px}
-.progress{height:10px;background:#e5edf3;border-radius:99px;overflow:hidden;margin-top:9px}.progress i{display:block;height:100%;background:linear-gradient(90deg,#72a6d3,#9d83d5);border-radius:99px}
-.decklist{display:grid;gap:9px}.deckrow{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e0eaf1;border-radius:15px;padding:10px}.deckrow .thumb{width:54px;height:66px;border-radius:12px;display:grid;place-items:center;font-size:32px;background:#dceec6}.deckrow b{flex:1;font-size:16px}.qty{display:flex;align-items:center;gap:9px}.qty button{width:34px;height:34px;border-radius:9px;background:#e8f0f6;font-weight:900;font-size:16px}
-.deckcount{font-size:32px;font-weight:900}.deckcount small{font-size:14px;color:var(--muted);font-weight:500}
-.battle-wrap{background:linear-gradient(180deg,#bdd7c0,#dfe9cf 53%,#c3d7bb);border-radius:25px;padding:12px;box-shadow:var(--shadow);min-height:610px;position:relative;overflow:hidden}
-.battle-wrap:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 30% 30%,#fff4,transparent 24%),linear-gradient(105deg,transparent 0 45%,#8da37a22 46% 48%,transparent 49%);pointer-events:none}
-.battle-head{display:flex;justify-content:space-between;position:relative;z-index:2}.player-chip{background:#ffffffd9;border-radius:14px;padding:8px 12px;font-size:14px;font-weight:bold}.hpbar{height:10px;width:100px;background:#d5d9d1;border-radius:99px;overflow:hidden;margin-top:4px}.hpbar i{display:block;width:70%;height:100%;background:#69b765}
-.arena{position:relative;z-index:2;display:grid;grid-template-columns:1fr 110px 1fr;gap:8px;align-items:center;margin-top:15px}.active-card{background:#fffffff0;border-radius:18px;padding:12px;box-shadow:0 10px 20px #3d5c4828;text-align:center}.active-card .big{font-size:80px;line-height:1}.active-card b{display:block;font-size:16px}.energy{color:#4c7e48;font-size:14px;margin:4px;font-weight:bold}
-.vs{width:54px;height:54px;border-radius:50%;background:#ffffffd9;display:grid;place-items:center;font-weight:1000;color:#9b6779;justify-self:center;font-size:16px}
-.bench{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;position:relative;z-index:2;margin-top:15px}.bench .slot{height:65px;border-radius:12px;background:#ffffff9e;border:1px solid #fff;display:grid;place-items:center;font-size:30px;position:relative}.bench .slot b{position:absolute;bottom:2px;right:4px;font-size:11px}
-.log{height:100px;overflow:auto;background:#ffffffa8;border-radius:14px;margin-top:12px;padding:10px;font-size:13px;position:relative;z-index:2;line-height:1.4}
-.actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px;position:relative;z-index:2}.actions button{height:52px;border-radius:14px;background:#fff;font-weight:900;font-size:16px;box-shadow:0 6px 12px #40584825}.actions button.main{background:#5c7f62;color:white}
-.shop-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.pack{background:linear-gradient(145deg,#ffffff,#e7e9f8);border-radius:22px;padding:20px;box-shadow:var(--shadow);text-align:center;border:1px solid #fff}.pack .packart{font-size:75px}.pack h3{margin:6px 0;font-size:18px}.pack p{font-size:14px;color:var(--muted)}
-.quest{display:flex;align-items:center;gap:12px;background:#fff;border-radius:17px;padding:14px;border:1px solid #e2ecf2;margin-bottom:9px}.quest .qicon{width:48px;height:48px;border-radius:13px;background:#e9f2fa;display:grid;place-items:center;font-size:26px}.quest .qbody{flex:1}.quest b{font-size:15px}.quest small{display:block;color:var(--muted);margin-top:2px;font-size:13px}.quest .reward{font-weight:900;color:#bd8d2b;font-size:15px}
-.profile{background:linear-gradient(145deg,#fff,#e8f1fa);border-radius:25px;padding:22px;box-shadow:var(--shadow);text-align:center}.avatar{width:90px;height:90px;border-radius:50%;display:grid;place-items:center;font-size:54px;background:#d8eaf7;border:5px solid #fff;margin:auto;box-shadow:0 8px 17px #607f9a33}.level{margin:8px auto;width:180px}.menu-list{display:grid;gap:9px;margin-top:14px}.menu-item{background:#fff;border:1px solid #e1ebf2;border-radius:15px;padding:16px;display:flex;align-items:center;gap:10px;font-size:16px}.menu-item span:last-child{margin-left:auto;color:#9aabba}
-.card-3d-stage{perspective:1100px;display:grid;place-items:center;min-height:430px;padding:20px}
-.card-3d{width:min(76vw,320px);aspect-ratio:0.70;transform-style:preserve-3d;transition:transform .18s ease;position:relative;filter:drop-shadow(0 25px 28px rgba(35,58,79,.28));cursor:grab}
-.card-3d:active{cursor:grabbing}
-.card-3d .face{position:absolute;inset:0;border-radius:20px;padding:12px;background:linear-gradient(145deg,#fff,#eef6fb);border:5px solid #fff;box-shadow:inset 0 0 0 1px #b8cddd,0 0 0 1px #7893aa;backface-visibility:hidden}
-.card-3d .face:after{content:"";position:absolute;inset:4px;border-radius:15px;border:1px solid #ffffff99;pointer-events:none}
-.card-3d .shine{position:absolute;inset:-20%;background:linear-gradient(115deg,transparent 35%,#fff7 48%,transparent 60%);transform:translateX(-60%) rotate(8deg);animation:shine 2.7s infinite;pointer-events:none;mix-blend-mode:screen}
-@keyframes shine{0%,35%{transform:translateX(-65%) rotate(8deg)}65%,100%{transform:translateX(65%) rotate(8deg)}}
-.card-3d .bigart{height:55%;border-radius:14px;display:grid;place-items:center;background:radial-gradient(circle at 30% 20%,#fff9,transparent 20%),linear-gradient(145deg,#d7efae,#77b85c);border:2px solid #c4d5a8;overflow:hidden;position:relative}
-.card-3d .bigart span{font-size:clamp(85px,22vw,135px);filter:drop-shadow(0 10px 6px #36552b55);transform:translateZ(30px);display:flex;align-items:center;justify-content:center}
-.card-3d .ctitle{font-weight:1000;font-size:20px;margin:8px 4px 4px}.card-3d .cmeta{display:flex;justify-content:space-between;font-size:14px;font-weight:bold}.card-3d .cmove{margin-top:10px;padding:10px;border-radius:12px;background:#eef5e9;font-weight:800;font-size:15px}
-.battle-board{display:grid;grid-template-columns:1fr 1.15fr 1fr;gap:9px;align-items:center;margin-top:14px;position:relative;z-index:2}
-.prize-zone{background:#ffffff8f;border:1px solid #fff;border-radius:15px;padding:8px;text-align:center;min-height:108px}
-.prize-zone h4{margin:0 0 5px;font-size:13px;color:#61788c}.prizes{display:flex;justify-content:center;gap:4px;flex-wrap:wrap}.prize{width:27px;height:39px;border-radius:5px;background:linear-gradient(135deg,#d9e9f5,#fff);border:2px solid #fff;box-shadow:0 2px 5px #46647a33;font-size:16px;display:grid;place-items:center}
-.field-zone{background:#ffffff55;border-radius:18px;padding:8px;min-height:250px;border:1px solid #ffffff88}.field-label{text-align:center;font-size:12px;color:#587086;font-weight:900;margin-bottom:5px}
-.active-slot{background:#ffffffd9;border-radius:16px;padding:8px;text-align:center;min-height:154px;box-shadow:0 10px 18px #49654b25;cursor:pointer;position:relative}.active-slot .big{font-size:70px;line-height:1}.active-slot b{display:block;font-size:16px}.active-slot small{color:#668091;font-size:12px}
-.damage-pop{position:absolute;left:50%;top:34%;transform:translate(-50%,-50%) scale(.4);font-size:42px;font-weight:1000;color:#fff;text-shadow:0 3px 0 #8c3149,0 0 16px #ff5d7a;opacity:0;z-index:20;pointer-events:none}
-.damage-pop.show{animation:damagePop .75s ease-out forwards}
-@keyframes damagePop{0%{opacity:0;transform:translate(-50%,-40%) scale(.4) rotate(-8deg)}20%{opacity:1;transform:translate(-50%,-60%) scale(1.25) rotate(5deg)}100%{opacity:0;transform:translate(-50%,-150%) scale(1) rotate(0)}}
-.attack-flash{position:absolute;inset:0;border-radius:25px;background:#fff;opacity:0;pointer-events:none;z-index:18}.attack-flash.show{animation:flash .32s ease-out}
-@keyframes flash{0%{opacity:.85}100%{opacity:0}}
-.slash{position:absolute;width:190px;height:16px;background:linear-gradient(90deg,transparent,#fff,#ff6988,transparent);transform:rotate(-25deg) scaleX(.1);opacity:0;z-index:19;left:50%;top:48%;pointer-events:none}.slash.show{animation:slash .45s ease-out}
-@keyframes slash{0%{opacity:0;transform:translate(-50%,-50%) rotate(-25deg) scaleX(.1)}35%{opacity:1;transform:translate(-50%,-50%) rotate(-25deg) scaleX(1)}100%{opacity:0;transform:translate(-50%,-50%) rotate(-25deg) scaleX(1.5)}}
-.hand-zone{display:flex;gap:7px;overflow-x:auto;padding:8px 2px;position:relative;z-index:3}.hand-card{min-width:70px;height:95px;border-radius:10px;background:#fff;border:2px solid #fff;box-shadow:0 5px 10px #46647a33;display:grid;place-items:center;font-size:40px;position:relative;cursor:pointer}.hand-card small{position:absolute;bottom:2px;font-size:10px;font-weight:bold;max-width:64px;overflow:hidden;white-space:nowrap}.bench-mini{display:flex;gap:6px;margin-top:7px;justify-content:center}.bench-mini .slot{width:52px;height:56px;border-radius:11px;background:#ffffff9e;border:1px solid #fff;display:grid;place-items:center;font-size:28px;cursor:pointer}
-@media(max-width:560px){.battle-board{grid-template-columns:66px 1fr 66px;gap:5px}.prize-zone{min-height:90px;padding:5px}.prize{width:21px;height:31px;font-size:13px}.field-zone{min-height:235px}.active-slot .big{font-size:62px}.hand-card{min-width:64px;height:86px;font-size:36px}}
-
-.modal{position:fixed;inset:0;background:#1e304566;z-index:100;display:none;align-items:flex-end;justify-content:center;padding:12px}.modal.show{display:flex}.sheet{width:min(100%,620px);max-height:90vh;overflow:auto;background:#f6fbfe;border-radius:25px 25px 12px 12px;padding:20px;box-shadow:0 -15px 45px #263f582e}.sheet-head{display:flex;justify-content:space-between;align-items:center}.sheet-head h2{font-size:22px}.close{width:40px;height:40px;border-radius:50%;background:#e7eff5;font-size:18px}.detail-card{max-width:300px;margin:8px auto 15px}.detail-card .art{height:250px}.detail-card .art .emoji{font-size:130px}.notice{padding:12px;border-radius:12px;background:#eef5fa;color:#62798d;font-size:14px;line-height:1.5}
-.pack-cover{display:grid;place-items:center;gap:12px;padding:26px 10px 10px;text-align:center}.pack-cover .art{font-size:96px;filter:drop-shadow(0 14px 18px #2b415933)}.pack-cover p{margin:0;color:var(--muted);font-size:15px}
-.pack-choice{width:80px;height:108px;border-radius:14px;display:grid;place-items:center;font-size:42px;box-shadow:0 10px 18px #23324533;cursor:pointer;transition:transform .15s;border:3px solid #fff}
-.pack-choice:active{transform:scale(.92) !important}
-.tear-hint{text-align:center;font-size:14px;color:var(--muted);margin:6px 0}
-.pack-tear-zone{position:relative;width:min(70vw,250px);margin:8px auto;touch-action:none;user-select:none}
-.pack-foil{position:relative;border-radius:20px;overflow:hidden;box-shadow:0 18px 30px #23324533;aspect-ratio:.68;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(150deg,var(--pf1,#8fc27a),var(--pf2,#3f7a3f))}
-.pack-foil .glow{position:absolute;inset:0;background:radial-gradient(circle at 50% 65%,#fff9 0%,transparent 60%);opacity:.7}
-.pack-foil .icon{font-size:68px;filter:drop-shadow(0 8px 10px #0003);z-index:2}
-.pack-foil .label{color:#fff;font-weight:900;margin-top:8px;letter-spacing:2px;z-index:2;font-size:15px}
-.pack-foil-top{position:absolute;top:0;left:0;right:0;height:54%;border-bottom:2px dashed #ffffffaa;z-index:3;background:linear-gradient(150deg,var(--pf1,#8fc27a),var(--pf2,#3f7a3f));transform-origin:top center;will-change:transform,opacity}
-.tear-tab{position:absolute;top:8px;right:8px;background:#fff;color:var(--blue2);font-size:13px;font-weight:900;border-radius:20px;padding:8px 15px;box-shadow:0 4px 10px #0003;cursor:grab;z-index:4;white-space:nowrap}
-.pack-flip-stage{perspective:1300px;display:grid;place-items:center;padding:16px 10px}
-.pack-flip-card{width:min(72vw,280px);aspect-ratio:.7;position:relative;cursor:pointer;transform-style:preserve-3d}
-.pack-flip-card .side{position:absolute;inset:0;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;backface-visibility:hidden;transition:transform .55s cubic-bezier(.2,.9,.25,1);box-shadow:0 18px 30px #23324522;text-align:center;padding:14px}
-.pack-flip-card .back{background:linear-gradient(150deg,#6c91ba,#385879);color:#fff;font-size:56px;transform:rotateY(0deg)}
-.pack-flip-card .front{background:linear-gradient(150deg,#fff,#eef6fb);border:5px solid #fff;transform:rotateY(180deg)}
-.pack-flip-card.revealed .back{transform:rotateY(180deg)}
-.pack-flip-card.revealed .front{transform:rotateY(360deg)}
-.pack-badge{display:inline-block;font-size:12px;font-weight:900;border-radius:8px;padding:3px 8px;margin:0 3px 6px 0}
-.pack-badge.new{background:#ffe2b0;color:#a3661c}.pack-badge.rare{background:#e9dcff;color:#6a3fc0}.pack-badge.pity{background:#d9f0e2;color:#25774a}
-
-.pack-summary-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px;margin-top:6px}
-.pack-summary-card{background:#fff;border:1px solid #e1ebf2;border-radius:14px;padding:10px 6px;text-align:center;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.pack-summary-card .emoji{font-size:42px;display:flex;align-items:center;justify-content:center;min-height:48px}.pack-summary-card .nm{font-size:13px;font-weight:800;margin-top:3px}.pack-summary-card .rr{font-size:11px;color:var(--muted)}
-
-.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(100%,900px);height:var(--nav);background:rgba(242,250,254,.96);backdrop-filter:blur(16px);border-top:1px solid #cfdee8;display:grid;grid-template-columns:repeat(5,1fr);z-index:50;padding-bottom:env(safe-area-inset-bottom)}
-.nav button{background:transparent;color:#8093a6;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:13px;font-weight:800}.nav button .ni{font-size:28px}.nav button.active{color:#355775}.nav button.active .ni{filter:drop-shadow(0 3px 3px #668aa444)}
-.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:#263b50;color:white;padding:12px 18px;border-radius:999px;opacity:0;pointer-events:none;z-index:150;font-size:14px;font-weight:bold;transition:.25s}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-@media(max-width:560px){
-  main{padding:14px 10px calc(var(--nav) + 18px)}.cards{grid-template-columns:repeat(2,1fr);gap:10px}.card{padding:8px;border-radius:15px}.art{height:135px}.art .emoji{font-size:72px}.card-name{font-size:15px}.tabs{gap:6px}.tab{height:70px}.tab .ico{font-size:26px}.statrow{gap:5px}.stat{padding:8px 4px}.stat b{font-size:17px}.toolbar{padding:8px;gap:6px}.select{max-width:110px;font-size:14px}.arena{grid-template-columns:1fr 45px 1fr}.active-card .big{font-size:58px}.battle-wrap{min-height:560px}.shop-grid{gap:10px}.hero h2{font-size:24px}
-}
-@media(min-width:700px){.cards{grid-template-columns:repeat(3,1fr)}.art{height:175px}.shop-grid{grid-template-columns:repeat(4,1fr)}}
-</style>
+        /* 群組管理列 */
+        .group-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 10px;
+            border-bottom: 1px solid #eee;
+            background: #f9f6ff;
+        }
+        .group-row span { flex: 2; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+        .group-row button { margin: 0 3px; padding: 2px 8px; font-size: 12px; }
+    </style>
 </head>
-<body>
-<div class="app">
-<header class="topbar"><h1 id="pageTitle">自己的卡牌</h1><button class="help" onclick="showHelp()">?</button></header>
-<div class="gradient-line"></div>
+<body class="xp-theme" style="background-image: url(&quot;https://images.pexels.com/photos/388415/pexels-photo-388415.jpeg&quot;); background-size: cover; background-position: center center;">
 
-<main>
-<section id="page-home" class="page active">
-  <div class="hero">
-    <h2>萌獸卡牌 · 冒險聯盟</h2><p>收集、組牌、培育你的專屬卡組。</p>
-    <div class="statrow">
-      <div class="stat"><b id="coin">1280</b><span>金幣</span></div>
-      <div class="stat"><b id="gem">120</b><span>晶石</span></div>
-      <div class="stat"><b id="collectionCount">12</b><span>收藏</span></div>
-      <div class="stat"><b id="winCount">7</b><span>勝場</span></div>
+<div id="desktop">
+    <div class="desktop-icons-container" id="iconsContainer"><div class="icon-group"><div class="group-folder"><div class="group-preview-icon"><img src="./Mydesktop應用桌面V0_files/9255645.png" onerror="this.style.display=&#39;none&#39;"></div><div class="group-preview-icon"><img src="./Mydesktop應用桌面V0_files/4248142.png" onerror="this.style.display=&#39;none&#39;"></div><div class="group-preview-icon" style="font-size:13px;">📑</div><div class="group-preview-icon"><img src="./Mydesktop應用桌面V0_files/17588666.png" onerror="this.style.display=&#39;none&#39;"></div></div><span>生產力工具</span></div><div class="icon-group"><div class="group-folder"><div class="group-preview-icon" style="font-size:13px;">🧘</div><div class="group-preview-icon" style="font-size:13px;">🛩</div><div class="group-preview-icon"><img src="./Mydesktop應用桌面V0_files/110527_90_sldfy000.jpg" onerror="this.style.display=&#39;none&#39;"></div><div class="group-preview-icon" style="font-size:13px;">🌁</div></div><span>休閒娛樂</span></div><div class="icon-group"><div class="group-folder"><div class="group-preview-icon"><img src="./Mydesktop應用桌面V0_files/instant-camera-polaroid-corporation-icon-png-favpng-LZ434LBPmEWP62kVZiYfKSimB.jpg" onerror="this.style.display=&#39;none&#39;"></div><div class="group-preview-icon" style="font-size:13px;">🖼️</div><div class="group-preview-icon"></div><div class="group-preview-icon"></div></div><span>影像編修</span></div><div class="icon-group"><div class="group-folder"><div class="group-preview-icon"><img src="./Mydesktop應用桌面V0_files/cute-robot-head-icon-logo-design-illustration-bot-robotic-logo-for-business-design-template-with-futuristic-flat-black-minimalist-style-isolated-on-white-background-vector.jpg" onerror="this.style.display=&#39;none&#39;"></div><div class="group-preview-icon"><img src="https://png.pngtree.com/png-vector/20250205/ourlarge/pngtree-ai-icon-png-image_15382528.png" onerror="this.style.display=&#39;none&#39;" style="display: none;"></div><div class="group-preview-icon" style="font-size:13px;">😊</div><div class="group-preview-icon"><img src="./Mydesktop應用桌面V0_files/scientist-with-lab-icons_1294240-67530.jpg" onerror="this.style.display=&#39;none&#39;"></div></div><span>人工智慧</span></div><div class="icon" draggable="true" data-index="0"><div class="icon-img" style="font-size:52px; line-height:1;">📁</div><span>我的儲存庫</span></div><div class="icon" draggable="true" data-index="1"><div class="icon-img" style="font-size:52px; line-height:1;">⚙️</div><span>系統設定</span></div><div class="icon" draggable="true" data-index="2"><div class="icon-img" style="font-size:52px; line-height:1;">ℹ️</div><span>關於</span></div><div class="icon" draggable="true" data-index="4"><div class="icon-img" style="font-size:52px; line-height:1;">⚙️</div><span>GITHUB</span></div><div class="icon" draggable="true" data-index="8"><div class="icon-img" style="font-size:52px; line-height:1;">🛰</div><span>ISS國際航空站</span></div><div class="icon" draggable="true" data-index="12"><div class="icon-img"><img src="./Mydesktop應用桌面V0_files/Google_Chrome_icon-icons.com_66794.png" onerror="this.src=&#39;https://cdn-icons-png.flaticon.com/512/1828/1828884.png&#39;"></div><span>瀏覽器</span></div><div class="icon" draggable="true" data-index="13"><div class="icon-img"><img src="./Mydesktop應用桌面V0_files/free-newspaper-news-icon-png-701751694975114q0xwdrzcy0.png" onerror="this.src=&#39;https://cdn-icons-png.flaticon.com/512/1828/1828884.png&#39;"></div><span>NEWS</span></div></div>
+</div>
+
+<!-- GitHub 視窗 -->
+<div id="repo-window" class="window" style="width: 620px; height: 480px; left: 80px; top: 80px; display: none;">
+    <div class="window-header"><span>📁 GitHub 倉庫總管</span><div class="window-controls"><button class="close-btn" onclick="closeWindow(&#39;repo-window&#39;)">✖</button></div></div>
+    <div class="window-body">
+        <div style="margin-bottom:10px; display:flex; justify-content:space-between;"><span id="currentAccountDisplay">👤 帳號: kaojarher</span><button id="manualSyncBtn">🔄 同步倉庫</button></div>
+        <div class="repo-list" id="repo-list-content"><a href="https://kaojarher.github.io/MinminMonV2/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>MinminMonV2</a><a href="https://kaojarher.github.io/NOTESLike/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>NOTESLike</a><a href="https://kaojarher.github.io/Veg_price-/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>Veg_price-</a><a href="https://kaojarher.github.io/Kbooklm/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>Kbooklm</a><a href="https://kaojarher.github.io/Pachingobaseball/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>Pachingobaseball</a><a href="https://kaojarher.github.io/Jin/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>Jin</a><a href="https://kaojarher.github.io/Groupfun/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>Groupfun</a><a href="https://kaojarher.github.io/BB/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>BB</a><a href="https://kaojarher.github.io/sea2/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>sea2</a><a href="https://kaojarher.github.io/MMmonZen/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>MMmonZen</a><a href="https://kaojarher.github.io/MMmon/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>MMmon</a><a href="https://kaojarher.github.io/Sea/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>Sea</a><a href="https://kaojarher.github.io/TravalrpgPauMau/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>TravalrpgPauMau</a><a href="https://kaojarher.github.io/MilkForm/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>MilkForm</a><a href="https://kaojarher.github.io/TowerHeroFanran/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>TowerHeroFanran</a><a href="https://kaojarher.github.io/TowerHero/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>TowerHero</a><a href="https://kaojarher.github.io/PachingoV2/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>PachingoV2</a><a href="https://kaojarher.github.io/PochingoCycle/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>PochingoCycle</a><a href="https://kaojarher.github.io/The_Qionglin_Academy_Chronicles/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>The_Qionglin_Academy_Chronicles</a><a href="https://kaojarher.github.io/ToastWorkshop/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>ToastWorkshop</a><a href="https://kaojarher.github.io/FortressDefense/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>FortressDefense</a><a href="https://kaojarher.github.io/BaseballJapan/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>BaseballJapan</a><a href="https://kaojarher.github.io/1995CBPL/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>1995CBPL</a><a href="https://kaojarher.github.io/CastleSurvivalEastKindom/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>CastleSurvivalEastKindom</a><a href="https://kaojarher.github.io/CastleSurvival_823/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>CastleSurvival_823</a><a href="https://kaojarher.github.io/rogue-legend_Zen/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>rogue-legend_Zen</a><a href="https://kaojarher.github.io/GSwardShop/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>GSwardShop</a><a href="https://kaojarher.github.io/Etower/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>Etower</a><a href="https://kaojarher.github.io/shootpig/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>shootpig</a><a href="https://kaojarher.github.io/Space_Scavenger-/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>Space_Scavenger-</a><a href="https://kaojarher.github.io/Senmozen/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>Senmozen</a><a href="https://kaojarher.github.io/idiomsemo/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>idiomsemo</a><a href="https://kaojarher.github.io/GSwardShop823/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>GSwardShop823</a><a href="https://kaojarher.github.io/T_Tool/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>T_Tool</a><a href="https://kaojarher.github.io/projectionJ/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>projectionJ</a><a href="https://kaojarher.github.io/OldStore/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>OldStore</a><a href="https://kaojarher.github.io/Sango3/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>Sango3</a><a href="https://kaojarher.github.io/XLSXCompareTool/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>XLSXCompareTool</a><a href="https://kaojarher.github.io/CLuner/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>CLuner</a><a href="https://kaojarher.github.io/City2/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>City2</a><a href="https://kaojarher.github.io/Samnotower/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>Samnotower</a><a href="https://kaojarher.github.io/OLDFORM/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>OLDFORM</a><a href="https://kaojarher.github.io/CalName/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>CalName</a><a href="https://kaojarher.github.io/CityDos/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>CityDos</a><a href="https://kaojarher.github.io/pocket_gallery_pro/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>pocket_gallery_pro</a><a href="https://kaojarher.github.io/cardadv/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>cardadv</a><a href="https://kaojarher.github.io/Gridfight/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>Gridfight</a><a href="https://kaojarher.github.io/NEONCORE/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>NEONCORE</a><a href="https://kaojarher.github.io/Rollingwar/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>Rollingwar</a><a href="https://kaojarher.github.io/CardMachineFan/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>CardMachineFan</a><a href="https://kaojarher.github.io/WEBSIM3D/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>WEBSIM3D</a><a href="https://kaojarher.github.io/websim2D/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>websim2D</a><a href="https://kaojarher.github.io/CardMachineDoPo/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>CardMachineDoPo</a><a href="https://kaojarher.github.io/CardMachineROC/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>CardMachineROC</a><a href="https://kaojarher.github.io/CardMachineDoLo/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>CardMachineDoLo</a><a href="https://kaojarher.github.io/Echoes_of_Triforce/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>Echoes_of_Triforce</a><a href="https://kaojarher.github.io/FireFlower/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>FireFlower</a><a href="https://kaojarher.github.io/FanRen_TanSing/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>FanRen_TanSing</a><a href="https://kaojarher.github.io/FanRen_JieYing/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>FanRen_JieYing</a><a href="https://kaojarher.github.io/Protecting_the_Princess/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>Protecting_the_Princess</a><a href="https://kaojarher.github.io/WaterBall/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>WaterBall</a><a href="https://kaojarher.github.io/FanRanBG/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>FanRanBG</a><a href="https://kaojarher.github.io/uvtool/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>uvtool</a><a href="https://kaojarher.github.io/CapuFight/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>CapuFight</a><a href="https://kaojarher.github.io/ALOgame/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>ALOgame</a><a href="https://kaojarher.github.io/1974MazeWar/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>1974MazeWar</a><a href="https://kaojarher.github.io/sha/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>sha</a><a href="https://kaojarher.github.io/KaojarherGameLand/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>KaojarherGameLand</a><a href="https://kaojarher.github.io/empire/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>empire</a><a href="https://kaojarher.github.io/SimCityE/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>SimCityE</a><a href="https://kaojarher.github.io/BluelyCar/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>BluelyCar</a><a href="https://kaojarher.github.io/WW2Emoji/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>WW2Emoji</a><a href="https://kaojarher.github.io/Golf/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>Golf</a><a href="https://kaojarher.github.io/CardGundam/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>CardGundam</a><a href="https://kaojarher.github.io/823firedefance/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>823firedefance</a><a href="https://kaojarher.github.io/tristanADV/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>tristanADV</a><a href="https://kaojarher.github.io/FireMonster/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>FireMonster</a><a href="https://kaojarher.github.io/321GoShoot/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>321GoShoot</a><a href="https://kaojarher.github.io/BubbleBobble/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>BubbleBobble</a><a href="https://kaojarher.github.io/Soladv/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>Soladv</a><a href="https://kaojarher.github.io/ChomutovADV/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>ChomutovADV</a><a href="https://kaojarher.github.io/CastleSurvivalWestKindom/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>CastleSurvivalWestKindom</a><a href="https://kaojarher.github.io/CastleFight-/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>CastleFight-</a><a href="https://kaojarher.github.io/C11sim/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>C11sim</a><a href="https://kaojarher.github.io/CARD/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>CARD</a><a href="https://kaojarher.github.io/ACity/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>ACity</a><a href="https://kaojarher.github.io/TravelRpg/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>TravelRpg</a><a href="https://kaojarher.github.io/FingerSport/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>FingerSport</a><a href="https://kaojarher.github.io/Dor/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>Dor</a><a href="https://kaojarher.github.io/Bulletechoemoji/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>Bulletechoemoji</a><a href="https://kaojarher.github.io/2025CBPL/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>2025CBPL</a><a href="https://kaojarher.github.io/1995CBPLV2/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>1995CBPLV2</a><a href="https://kaojarher.github.io/GSwardShopZen/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>GSwardShopZen</a><a href="https://kaojarher.github.io/Sport/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>Sport</a><a href="https://kaojarher.github.io/fanranrpg/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>fanranrpg</a><a href="https://kaojarher.github.io/rogue-legend/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>rogue-legend</a><a href="https://kaojarher.github.io/ZEN/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>ZEN</a><a href="https://kaojarher.github.io/RoEmoji/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>RoEmoji</a><a href="https://kaojarher.github.io/fanran/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>fanran</a><a href="https://kaojarher.github.io/DOROLAND/" target="_blank" class="repo-item"><img src="./Mydesktop應用桌面V0_files/25231.png" width="30"><br>DOROLAND</a></div>
     </div>
-  </div>
-  <div class="section-title"><h3>快速開始</h3><span>今日推薦</span></div>
-  <div class="grid2">
-    <div class="mini-panel"><h4>⚔️ 排位對戰</h4><p>使用目前卡組挑戰 AI。</p><button class="btn" onclick="go('battle')">開始對戰</button></div>
-    <div class="mini-panel"><h4>🎁 免費補給</h4><p>每日登入可領取獎勵。</p><button class="btn gold" onclick="dailyReward()">領取 100 金</button></div>
-  </div>
-  <div class="section-title"><h3>熱門卡牌</h3><button class="pill" onclick="go('collection')">查看全部</button></div>
-  <div id="homeCards" class="cards"></div>
-</section>
+</div>
 
-<section id="page-collection" class="page">
-  <div class="tabs">
-    <button class="tab active" id="tabCreature" onclick="setCollectionMode('creature')"><span class="ico">▣</span><b>萌獸卡</b></button>
-    <button class="tab" id="tabTrainer" onclick="setCollectionMode('trainer')"><span class="ico">🎒</span><b>訓練家卡</b></button>
-    <button class="tab" onclick="go('deck')"><span class="ico">▥</span><b>牌組</b></button>
-    <button class="tab" onclick="go('shop')"><span class="ico">🎁</span><b>商店</b></button>
-  </div>
-  <div class="toolbar"><div class="search"><input id="search" placeholder="搜尋卡牌名稱..." oninput="renderCollection()"><span>⌕</span></div><select id="elementFilter" class="select" onchange="renderCollection()"><option value="all">全部屬性</option><option>草</option><option>火</option><option>水</option><option>雷</option><option>超能</option><option>無</option></select></div>
-  <div class="toolbar" style="margin-top:-6px"><span class="pill on" onclick="setSort('new')">最新</span><span class="pill" onclick="setSort('hp')">HP</span><span class="pill" onclick="setSort('rarity')">稀有度</span><span class="pill" onclick="setSort('qty')">持有數</span><span style="margin-left:auto;font-size:14px;color:#71869b;font-weight:bold">共 <b id="totalCards">0</b> 張</span></div>
-  <div id="collectionCards" class="cards"></div>
-</section>
-
-<section id="page-deck" class="page">
-  <div class="hero"><div class="section-title" style="margin-top:0"><h2>我的牌組</h2><span class="deckcount"><b id="deckCount">0</b><small>/60</small></span></div><p>規則：牌組最多 60 張；同名卡（含萌獸卡與訓練家卡）最多 4 張。</p><div class="progress"><i id="deckProgress" style="width:0%"></i></div></div>
-  <div class="section-title"><h3>牌組操作</h3><button class="btn light" onclick="clearDeck()">清空</button></div>
-  <div class="toolbar"><button class="btn" onclick="autoDeck()">智慧組牌</button><button class="btn gold" onclick="saveDeck()">儲存牌組</button></div>
-  <div id="deckList" class="decklist"></div>
-</section>
-
-<section id="page-battle" class="page">
-  <div class="section-title"><h3>⚔️ AI 對戰</h3><span id="battleTurn">你的回合</span></div>
-  <div id="battleSetupPanel" class="mini-panel" style="background:#fff;border-radius:20px;padding:16px;box-shadow:var(--shadow);border:1px solid #fff">
-    <h4 style="margin:0 0 4px">🎴 安排你的戰場</h4>
-    <p style="margin:0 0 10px;color:var(--muted);font-size:14px">比照集換式卡牌規則：開局只能派出「基礎」萌獸。從你的牌組中點選一張作為先發主戰卡，最多再選 3 張放上備戰區。</p>
-    <div id="setupWarning"></div>
-    <div class="cards" id="setupGrid" style="margin-bottom:10px"></div>
-    <div class="notice" id="setupSummary" style="margin-bottom:10px">尚未選擇先發卡牌</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn" id="setupStartBtn" onclick="confirmBattleSetup()" disabled>⚔️ 開始對戰</button>
-      <button class="btn light" onclick="autoBattleSetup()">🎲 隨機安排</button>
-      <button class="btn light" onclick="resetBattleSetup()">重設</button>
+<!-- 系統設定視窗 -->
+<div id="settings-window" class="window" style="width: 650px; height: 680px; left: 180px; top: 80px;">
+    <div class="window-header"><span>⚙️ 系統設定 &amp; 捷徑管理</span><div class="window-controls"><button class="close-btn" onclick="closeWindow(&#39;settings-window&#39;)">✖</button></div></div>
+    <div class="window-body">
+        <div style="background:#f0f0f0; padding:12px; border-radius:12px;">
+            <p><strong>🎨 佈景主題</strong></p>
+            <button id="xpThemeBtn">🪟 Windows XP</button> <button id="macThemeBtn">🍎 macOS</button>
+            <hr>
+            <p><strong>🖼️ 桌布設定 (圖片或純色)</strong></p>
+            <div><input type="text" id="wallpaperUrl" placeholder="圖片網址" style="width: 60%;"><button id="applyWallpaperBtn">套用圖片</button></div>
+            <div style="margin-top:8px;"><label>純色背景: </label><input type="color" id="solidColorPicker" value="#3a6ea5"><button id="applySolidColorBtn">套用純色</button><span class="color-preview" id="colorPreview" style="background:#3a6ea5;"></span></div>
+            <div><button id="resetWallpaperBtn">重置為主題預設桌布</button></div>
+            <div><input type="file" id="wallpaperUpload" accept="image/*" style="margin-top:6px;"></div>
+            <hr>
+            <p><strong>👤 GitHub 帳號</strong></p>
+            <div style="display:flex; gap:8px;"><input type="text" id="githubUsernameInput" placeholder="使用者名稱" style="flex:1;"><button id="applyUsernameBtn">切換並同步</button></div>
+            <hr>
+            <p><strong>📌 桌面捷徑管理</strong> <button id="newShortcutBtn">➕ 新增捷徑</button></p>
+            <div class="shortcut-manager" id="shortcutListContainer">
+            <div class="shortcut-row">
+                <span><span style="font-size:24px;">📁</span> 我的儲存庫</span>
+                <div>
+                    <label style="font-size:12px;"><input type="checkbox" class="pin-checkbox" data-id="1" checked=""> 工作列</label>
+                    <button class="edit-shortcut" data-id="1">✏️</button>
+                    <button class="del-shortcut" data-id="1">🗑️</button>
+                </div>
+            </div>
+        
+            <div class="shortcut-row">
+                <span><span style="font-size:24px;">⚙️</span> 系統設定</span>
+                <div>
+                    <label style="font-size:12px;"><input type="checkbox" class="pin-checkbox" data-id="2" checked=""> 工作列</label>
+                    <button class="edit-shortcut" data-id="2">✏️</button>
+                    <button class="del-shortcut" data-id="2">🗑️</button>
+                </div>
+            </div>
+        
+            <div class="shortcut-row">
+                <span><span style="font-size:24px;">ℹ️</span> 關於</span>
+                <div>
+                    <label style="font-size:12px;"><input type="checkbox" class="pin-checkbox" data-id="3"> 工作列</label>
+                    <button class="edit-shortcut" data-id="3">✏️</button>
+                    <button class="del-shortcut" data-id="3">🗑️</button>
+                </div>
+            </div>
+        
+            <div class="shortcut-row">
+                <span><span style="font-size:24px;">🧘</span> 凡人</span>
+                <div>
+                    <label style="font-size:12px;"><input type="checkbox" class="pin-checkbox" data-id="100"> 工作列</label>
+                    <button class="edit-shortcut" data-id="100">✏️</button>
+                    <button class="del-shortcut" data-id="100">🗑️</button>
+                </div>
+            </div>
+        
+            <div class="shortcut-row">
+                <span><span style="font-size:24px;">⚙️</span> GITHUB</span>
+                <div>
+                    <label style="font-size:12px;"><input type="checkbox" class="pin-checkbox" data-id="112"> 工作列</label>
+                    <button class="edit-shortcut" data-id="112">✏️</button>
+                    <button class="del-shortcut" data-id="112">🗑️</button>
+                </div>
+            </div>
+        
+            <div class="shortcut-row">
+                <span><span style="font-size:24px;">🛩</span> flysimuation</span>
+                <div>
+                    <label style="font-size:12px;"><input type="checkbox" class="pin-checkbox" data-id="101"> 工作列</label>
+                    <button class="edit-shortcut" data-id="101">✏️</button>
+                    <button class="del-shortcut" data-id="101">🗑️</button>
+                </div>
+            </div>
+        
+            <div class="shortcut-row">
+                <span><img src="./Mydesktop應用桌面V0_files/9255645.png" width="24"> RPA自動化</span>
+                <div>
+                    <label style="font-size:12px;"><input type="checkbox" class="pin-checkbox" data-id="102"> 工作列</label>
+                    <button class="edit-shortcut" data-id="102">✏️</button>
+                    <button class="del-shortcut" data-id="102">🗑️</button>
+                </div>
+            </div>
+        
+            <div class="shortcut-row">
+                <span><img src="./Mydesktop應用桌面V0_files/4248142.png" width="24"> HEDIT</span>
+                <div>
+                    <label style="font-size:12px;"><input type="checkbox" class="pin-checkbox" data-id="103"> 工作列</label>
+                    <button class="edit-shortcut" data-id="103">✏️</button>
+                    <button class="del-shortcut" data-id="103">🗑️</button>
+                </div>
+            </div>
+        
+            <div class="shortcut-row">
+                <span><span style="font-size:24px;">🛰</span> ISS國際航空站</span>
+                <div>
+                    <label style="font-size:12px;"><input type="checkbox" class="pin-checkbox" data-id="104"> 工作列</label>
+                    <button class="edit-shortcut" data-id="104">✏️</button>
+                    <button class="del-shortcut" data-id="104">🗑️</button>
+                </div>
+            </div>
+        
+            <div class="shortcut-row">
+                <span><img src="./Mydesktop應用桌面V0_files/cute-robot-head-icon-logo-design-illustration-bot-robotic-logo-for-business-design-template-with-futuristic-flat-black-minimalist-style-isolated-on-white-background-vector.jpg" width="24"> LOOI</span>
+                <div>
+                    <label style="font-size:12px;"><input type="checkbox" class="pin-checkbox" data-id="105"> 工作列</label>
+                    <button class="edit-shortcut" data-id="105">✏️</button>
+                    <button class="del-shortcut" data-id="105">🗑️</button>
+                </div>
+            </div>
+        
+            <div class="shortcut-row">
+                <span><span style="font-size:24px;">📑</span> MD檔編輯器</span>
+                <div>
+                    <label style="font-size:12px;"><input type="checkbox" class="pin-checkbox" data-id="106"> 工作列</label>
+                    <button class="edit-shortcut" data-id="106">✏️</button>
+                    <button class="del-shortcut" data-id="106">🗑️</button>
+                </div>
+            </div>
+        
+            <div class="shortcut-row">
+                <span><img src="./Mydesktop應用桌面V0_files/17588666.png" width="24"> 網路會議室</span>
+                <div>
+                    <label style="font-size:12px;"><input type="checkbox" class="pin-checkbox" data-id="107"> 工作列</label>
+                    <button class="edit-shortcut" data-id="107">✏️</button>
+                    <button class="del-shortcut" data-id="107">🗑️</button>
+                </div>
+            </div>
+        
+            <div class="shortcut-row">
+                <span><img src="./Mydesktop應用桌面V0_files/Google_Chrome_icon-icons.com_66794.png" width="24"> 瀏覽器</span>
+                <div>
+                    <label style="font-size:12px;"><input type="checkbox" class="pin-checkbox" data-id="108"> 工作列</label>
+                    <button class="edit-shortcut" data-id="108">✏️</button>
+                    <button class="del-shortcut" data-id="108">🗑️</button>
+                </div>
+            </div>
+        
+            <div class="shortcut-row">
+                <span><img src="./Mydesktop應用桌面V0_files/free-newspaper-news-icon-png-701751694975114q0xwdrzcy0.png" width="24"> NEWS</span>
+                <div>
+                    <label style="font-size:12px;"><input type="checkbox" class="pin-checkbox" data-id="109"> 工作列</label>
+                    <button class="edit-shortcut" data-id="109">✏️</button>
+                    <button class="del-shortcut" data-id="109">🗑️</button>
+                </div>
+            </div>
+        
+            <div class="shortcut-row">
+                <span><img src="./Mydesktop應用桌面V0_files/instant-camera-polaroid-corporation-icon-png-favpng-LZ434LBPmEWP62kVZiYfKSimB.jpg" width="24"> Instax camera</span>
+                <div>
+                    <label style="font-size:12px;"><input type="checkbox" class="pin-checkbox" data-id="110"> 工作列</label>
+                    <button class="edit-shortcut" data-id="110">✏️</button>
+                    <button class="del-shortcut" data-id="110">🗑️</button>
+                </div>
+            </div>
+        
+            <div class="shortcut-row">
+                <span><img src="./Mydesktop應用桌面V0_files/110527_90_sldfy000.jpg" width="24"> 失落的封印</span>
+                <div>
+                    <label style="font-size:12px;"><input type="checkbox" class="pin-checkbox" data-id="111"> 工作列</label>
+                    <button class="edit-shortcut" data-id="111">✏️</button>
+                    <button class="del-shortcut" data-id="111">🗑️</button>
+                </div>
+            </div>
+        
+            <div class="shortcut-row">
+                <span><span style="font-size:24px;">🌁</span> SimCityEmoji</span>
+                <div>
+                    <label style="font-size:12px;"><input type="checkbox" class="pin-checkbox" data-id="113"> 工作列</label>
+                    <button class="edit-shortcut" data-id="113">✏️</button>
+                    <button class="del-shortcut" data-id="113">🗑️</button>
+                </div>
+            </div>
+        
+            <div class="shortcut-row">
+                <span><img src="./Mydesktop應用桌面V0_files/8001983.png" width="24"> MCP RPA自動化工具</span>
+                <div>
+                    <label style="font-size:12px;"><input type="checkbox" class="pin-checkbox" data-id="114"> 工作列</label>
+                    <button class="edit-shortcut" data-id="114">✏️</button>
+                    <button class="del-shortcut" data-id="114">🗑️</button>
+                </div>
+            </div>
+        
+            <div class="shortcut-row">
+                <span><span style="font-size:24px;">🖼️</span> 相片拼貼工具</span>
+                <div>
+                    <label style="font-size:12px;"><input type="checkbox" class="pin-checkbox" data-id="115"> 工作列</label>
+                    <button class="edit-shortcut" data-id="115">✏️</button>
+                    <button class="del-shortcut" data-id="115">🗑️</button>
+                </div>
+            </div>
+        
+            <div class="shortcut-row">
+                <span><img src="https://png.pngtree.com/png-vector/20250205/ourlarge/pngtree-ai-icon-png-image_15382528.png" width="24"> 小隻AI</span>
+                <div>
+                    <label style="font-size:12px;"><input type="checkbox" class="pin-checkbox" data-id="116"> 工作列</label>
+                    <button class="edit-shortcut" data-id="116">✏️</button>
+                    <button class="del-shortcut" data-id="116">🗑️</button>
+                </div>
+            </div>
+        
+            <div class="shortcut-row">
+                <span><span style="font-size:24px;">😊</span> 珍妮AI</span>
+                <div>
+                    <label style="font-size:12px;"><input type="checkbox" class="pin-checkbox" data-id="117"> 工作列</label>
+                    <button class="edit-shortcut" data-id="117">✏️</button>
+                    <button class="del-shortcut" data-id="117">🗑️</button>
+                </div>
+            </div>
+        
+            <div class="shortcut-row">
+                <span><img src="./Mydesktop應用桌面V0_files/scientist-with-lab-icons_1294240-67530.jpg" width="24"> 類神經實驗室</span>
+                <div>
+                    <label style="font-size:12px;"><input type="checkbox" class="pin-checkbox" data-id="118"> 工作列</label>
+                    <button class="edit-shortcut" data-id="118">✏️</button>
+                    <button class="del-shortcut" data-id="118">🗑️</button>
+                </div>
+            </div>
+        
+            <div class="shortcut-row">
+                <span><img src="./Mydesktop應用桌面V0_files/black-maze-icon-isolated-on-260nw-239033104.jpg" width="24"> MazeWar1974</span>
+                <div>
+                    <label style="font-size:12px;"><input type="checkbox" class="pin-checkbox" data-id="119"> 工作列</label>
+                    <button class="edit-shortcut" data-id="119">✏️</button>
+                    <button class="del-shortcut" data-id="119">🗑️</button>
+                </div>
+            </div>
+        </div>
+            <hr>
+            <p><strong>📂 群組管理</strong> <button id="newGroupBtn">➕ 新增群組</button></p>
+            <div class="shortcut-manager" id="groupListContainer"><div class="group-row">
+                <span style="font-size:20px;">📂</span>
+                <span>生產力工具 <small style="color:#888;">(5 個捷徑)</small></span>
+                <div>
+                    <button class="edit-group" data-gid="1">✏️</button>
+                    <button class="del-group" data-gid="1">🗑️</button>
+                </div>
+            </div><div class="group-row">
+                <span style="font-size:20px;">📂</span>
+                <span>休閒娛樂 <small style="color:#888;">(5 個捷徑)</small></span>
+                <div>
+                    <button class="edit-group" data-gid="2">✏️</button>
+                    <button class="del-group" data-gid="2">🗑️</button>
+                </div>
+            </div><div class="group-row">
+                <span style="font-size:20px;">📂</span>
+                <span>影像編修 <small style="color:#888;">(2 個捷徑)</small></span>
+                <div>
+                    <button class="edit-group" data-gid="3">✏️</button>
+                    <button class="del-group" data-gid="3">🗑️</button>
+                </div>
+            </div><div class="group-row">
+                <span style="font-size:20px;">📂</span>
+                <span>人工智慧 <small style="color:#888;">(4 個捷徑)</small></span>
+                <div>
+                    <button class="edit-group" data-gid="4">✏️</button>
+                    <button class="del-group" data-gid="4">🗑️</button>
+                </div>
+            </div></div>
+            <p style="font-size:12px;">💡 群組：將多個捷徑合併為一個資料夾圖示，桌面點擊展開，開始選單自動收合為子選單。</p>
+            <hr>
+            <p><strong>📦 匯出/匯入全部設定</strong></p>
+            <button onclick="exportFullConfig()">📤 匯出設定 (JSON)</button>
+            <input type="file" id="importFullFile" accept=".json" style="margin:6px 0;"><button onclick="importFullConfig()">📥 匯入並套用</button>
+        </div>
+        <div id="settingStatus" style="font-size:12px; margin-top:12px; color:#2c6e2f;"></div>
     </div>
-  </div>
-  <div class="battle-wrap" id="battleWrap" style="display:none">
-    <div class="attack-flash" id="attackFlash"></div><div class="slash" id="slash"></div><div class="damage-pop" id="damagePop">-30</div>
-    <div class="battle-head">
-      <div class="player-chip">🤖 野外訓練師<div class="hpbar"><i id="enemyHpBar"></i></div></div>
-      <div class="player-chip">獎賞 6 張 · 回合 <span id="roundNo">1</span> · 牌堆 <span id="drawPileCount">0</span> 張</div>
-      <div class="player-chip">🧑 你<div class="hpbar"><i id="playerHpBar" style="width:100%"></i></div></div>
+</div>
+
+<!-- 新增/編輯捷徑對話框 (支援 emoji 選擇) -->
+<div id="shortcutDialog" class="window" style="width: 480px; height: 560px; left: 250px; top: 150px;">
+    <div class="window-header"><span id="dialogTitle">➕ 建立捷徑</span><div class="window-controls"><button class="close-btn" onclick="closeWindow(&#39;shortcutDialog&#39;)">✖</button></div></div>
+    <div class="window-body">
+        <div class="shortcut-form">
+            <label>捷徑名稱:</label><input type="text" id="editShortcutName" placeholder="名稱">
+            <label>圖示類型:</label>
+            <select id="iconTypeSelect">
+                <option value="emoji">😀 使用 Emoji 圖示</option>
+                <option value="url">🖼️ 使用圖片網址</option>
+            </select>
+            <div id="emojiSection">
+                <label>選擇 Emoji (點擊即可選用):</label>
+                <div class="emoji-picker" id="emojiPicker">
+                    <!-- 常用 emoji -->
+                    <span class="emoji-option">📁</span> <span class="emoji-option">⚙️</span> <span class="emoji-option">🌐</span> <span class="emoji-option">💻</span>
+                    <span class="emoji-option">🐙</span> <span class="emoji-option">⭐</span> <span class="emoji-option">🔧</span> <span class="emoji-option">🎨</span>
+                    <span class="emoji-option">🖼️</span> <span class="emoji-option">📊</span> <span class="emoji-option">🔗</span> <span class="emoji-option">💾</span>
+                    <span class="emoji-option">📌</span> <span class="emoji-option">🚀</span> <span class="emoji-option">🎯</span> <span class="emoji-option">🛠️</span>
+                    <span class="emoji-option">📂</span> <span class="emoji-option">🔍</span> <span class="emoji-option">✨</span> <span class="emoji-option">❤️</span>
+                </div>
+                <label>或自訂 Emoji (貼上單個 Emoji):</label>
+                <input type="text" id="customEmojiInput" placeholder="例如 🐱" maxlength="2">
+            </div>
+            <div id="urlSection" style="display:none;">
+                <label>圖示網址:</label><input type="text" id="editShortcutIconUrl" placeholder="https://...">
+            </div>
+            <label>動作類型:</label>
+            <select id="editShortcutActionType"><option value="url">開啟網址</option><option value="function">執行函數</option></select>
+            <label>目標 (網址或函數呼叫):</label><input type="text" id="editShortcutTarget" placeholder="https:// 或 openWindow(&#39;repo-window&#39;)">
+            <label><input type="checkbox" id="editShortcutPinTaskbar"> 顯示於工作列 (快速啟動)</label>
+            <button id="saveShortcutBtn" style="margin-top:12px;">💾 儲存</button>
+        </div>
     </div>
-    <div class="battle-board">
-      <div class="prize-zone"><h4>AI 獎賞區</h4><div class="prizes" id="enemyPrizes"></div></div>
-      <div class="field-zone"><div class="field-label">對手主戰區</div><div class="active-slot" onclick="zoomBattleCard('enemy')"><div class="big" id="enemyEmoji">🦋</div><b id="enemyName">幻蝶</b><small>HP <span id="enemyHp">130</span>/<span id="enemyMaxHp">130</span> · 能量 ⚡⚡</small></div><div class="bench-mini" id="enemyBench"></div></div>
-      <div class="prize-zone"><h4>你的獎賞區</h4><div class="prizes" id="playerPrizes"></div></div>
+</div>
+
+<!-- 開始選單 -->
+<div id="startMenu" class="start-menu" style="position:fixed; bottom:50px; left:0; width:260px; background:rgba(240,240,245,0.95); backdrop-filter:blur(20px); border-radius:12px; box-shadow:0 5px 20px rgba(0,0,0,0.3); z-index:250; display:none; padding:8px 0;"></div>
+
+<!-- 群組展開彈窗 -->
+<div id="groupPopupOverlay" onclick="closeGroupPopup()"></div>
+<div id="groupPopup">
+    <div class="popup-title" id="groupPopupTitle">群組名稱</div>
+    <div class="popup-grid" id="groupPopupGrid"></div>
+</div>
+
+<!-- 群組管理對話框 -->
+<div id="groupDialog" class="window" style="width: 500px; height: 560px; left: 200px; top: 120px;">
+    <div class="window-header"><span id="groupDialogTitle">📂 建立群組</span><div class="window-controls"><button class="close-btn" onclick="closeWindow(&#39;groupDialog&#39;)">✖</button></div></div>
+    <div class="window-body">
+        <div class="shortcut-form">
+            <label>群組名稱:</label>
+            <input type="text" id="editGroupName" placeholder="例如：工具箱、遊戲">
+            <label>群組 Emoji 圖示:</label>
+            <input type="text" id="editGroupEmoji" placeholder="📂" maxlength="2" style="font-size:22px; width:80px;">
+            <hr>
+            <label><strong>選擇要加入此群組的捷徑:</strong></label>
+            <div id="groupMemberCheckboxes" style="max-height:200px;overflow-y:auto;border:1px solid #ccc;border-radius:8px;padding:8px;margin:8px 0;"></div>
+            <button id="saveGroupBtn" style="margin-top:12px;">💾 儲存群組</button>
+        </div>
     </div>
-    <div class="field-zone" style="margin-top:8px;position:relative;z-index:2"><div class="field-label">你的主戰區</div><div class="active-slot" onclick="zoomBattleCard('player')"><div class="big" id="playerEmoji">🌱</div><b id="playerName">刺尾莓</b><small>HP <span id="playerHp">60</span>/<span id="playerMaxHp">60</span> · 能量 <span id="battleEnergyCount">0</span></small></div><div class="bench-mini" id="bench"></div></div>
-    <div class="field-label" style="margin-top:8px;position:relative;z-index:2">手牌（🧬標記的卡可進化主戰或備戰區的萌獸）</div>
-    <div class="hand-zone" id="handZone"></div>
-    <div class="field-label" style="position:relative;z-index:2">道具／支援者／競技場卡</div>
-    <div class="hand-zone" id="trainerZone"></div>
-    <div class="log" id="battleLog">對戰開始！你可以從手牌查看 3D 卡牌，附加能量、攻擊、換位或進化，也能使用道具卡輔助戰鬥。<br></div>
-    <div class="actions">
-      <button onclick="battleEnergy()">⚡ 附能</button>
-      <button class="main" onclick="attack()">💥 攻擊</button>
-      <button onclick="battleSwitch()">🔄 換位</button>
-    </div>
-    <div style="text-align:center;margin-top:8px"><span style="font-size:14px;color:#5c7690;text-decoration:underline;cursor:pointer;font-weight:bold" onclick="leaveBattle()">↩ 結束並重新安排戰場</span></div>
-  </div>
-</section>
+</div>
 
-<section id="page-shop" class="page">
-  <div class="hero"><h2>商店</h2><p>用金幣與晶石取得補充包、道具與卡背。</p></div>
-  <div class="section-title"><h3>補充包</h3><span>每包 5 張</span></div>
-  <div class="shop-grid">
-    <div class="pack"><div class="packart">🌲📦</div><h3>森林秘境</h3><p>草、水系卡牌機率提升</p><button class="btn" onclick="buyPack(180,'森林秘境','coin')">180 金幣</button></div>
-    <div class="pack"><div class="packart">🔥📦</div><h3>烈焰試煉</h3><p>火、雷系卡牌機率提升</p><button class="btn pink" onclick="buyPack(25,'烈焰試煉','gem')">25 晶石</button></div>
-    <div class="pack"><div class="packart">✨📦</div><h3>閃耀精選</h3><p>至少 1 張稀有卡</p><button class="btn gold" onclick="buyPremium()">80 晶石</button></div>
-    <div class="pack"><div class="packart">🐉📦</div><h3>限定卡背</h3><p>解鎖特殊對戰外觀</p><button class="btn light" onclick="toast('卡背已加入收藏')">查看</button></div>
-  </div>
-</section>
-
-<section id="page-mission" class="page">
-  <div class="hero"><h2>任務中心</h2><p>完成每日任務，累積晶石與金幣。</p></div>
-  <div class="section-title"><h3>每日任務</h3><span>進度每日更新</span></div>
-  <div id="quests"></div>
-</section>
-
-<section id="page-profile" class="page">
-  <div class="profile"><div class="avatar">🧑‍🎓</div><h2>新手訓練師</h2><p style="color:#71869b">冒險等級 Lv.12</p><div class="level"><div class="progress"><i style="width:68%"></i></div><small>680 / 1000 XP</small></div></div>
-  <div class="menu-list">
-    <div class="menu-item" onclick="showHelp()">📖 <b>遊戲規則</b><span>›</span></div>
-    <div class="menu-item" onclick="go('mission')">🎯 <b>任務中心</b><span>›</span></div>
-    <div class="menu-item" onclick="exportSave()">💾 <b>匯出存檔</b><span>›</span></div>
-    <div class="menu-item" onclick="importSave()">📥 <b>匯入存檔</b><span>›</span></div>
-    <div class="menu-item" onclick="resetGame()">♻️ <b>重置本機資料</b><span>›</span></div>
-  </div>
-</section>
-</main>
-
-<nav class="nav">
-  <button data-page="home" class="active" onclick="go('home')"><span class="ni">⌂</span>首頁</button>
-  <button data-page="collection" onclick="go('collection')"><span class="ni">▣</span>卡牌</button>
-  <button data-page="battle" onclick="go('battle')"><span class="ni">⚔</span>對戰</button>
-  <button data-page="shop" onclick="go('shop')"><span class="ni">🎁</span>商店</button>
-  <button data-page="profile" onclick="go('profile')"><span class="ni">☰</span>更多</button>
-</nav>
-<div id="toast" class="toast"></div>
-
-<div id="packModal" class="modal" onclick="if(event.target===this)closePackModal()"><div class="sheet">
- <div class="sheet-head"><h2 id="packModalTitle">拆封補充包</h2><button class="close" onclick="closePackModal()">✕</button></div>
- <div id="packStageChoose" class="pack-cover">
-   <div class="art" id="packCoverArt">🎁</div>
-   <h3 id="packCoverTitle" style="margin:0">森林秘境</h3>
-   <p>選一包你想拆的補充包</p>
-   <div style="display:flex;gap:12px;justify-content:center;margin-top:4px" id="packChooseRow"></div>
- </div>
- <div id="packStageTear" style="display:none">
-   <p class="tear-hint" style="margin-top:0">拖曳右上角拉環，把包裝撕開！</p>
-   <div class="pack-tear-zone" id="packTearZone" onpointerdown="packTearStart(event)" onpointermove="packTearMove(event)" onpointerup="packTearEnd(event)" onpointerleave="packTearEnd(event)" onpointercancel="packTearEnd(event)">
-     <div class="pack-foil" id="packFoilBase"><div class="glow"></div><span class="icon" id="packTearIcon">🌿</span><span class="label" id="packTearLabel">森林秘境</span></div>
-     <div class="pack-foil-top" id="packFoilTop"><div class="tear-tab" id="packTearTab">✋ 撕開</div></div>
-   </div>
-   <p class="tear-hint" style="cursor:pointer;text-decoration:underline" onclick="finishTear()">手滑了？點此直接撕開</p>
- </div>
- <div id="packStageCard" style="display:none">
-   <div style="text-align:center;font-size:14px;color:var(--muted);margin-bottom:4px;font-weight:bold" id="packCounter">1 / 5</div>
-   <div class="pack-flip-stage"><div class="pack-flip-card" id="packCardStage" onclick="packFlip()">
-     <div class="side back" id="packCardBack">🎴<br><small style="font-size:15px;margin-top:6px">點擊翻牌</small></div>
-     <div class="side front" id="packCardFront">
-       <div id="packCardBadge"></div>
-       <div style="font-size:72px" id="packCardEmoji">🌱</div>
-       <div style="font-weight:900;font-size:19px;margin-top:6px" id="packCardName"></div>
-       <div style="font-size:13px;color:var(--muted);margin-top:3px;font-weight:bold" id="packCardMeta"></div>
-     </div>
-   </div></div>
-   <div style="text-align:center"><button class="btn" id="packNextBtn" onclick="packNext()">下一張</button></div>
- </div>
- <div id="packStageSummary" style="display:none">
-   <p style="text-align:center;font-weight:800;font-size:16px" id="packSummaryTitle"></p>
-   <div class="pack-summary-grid" id="packSummaryGrid"></div>
-   <div class="notice" style="margin-top:12px">點擊卡片可開啟 3D 卡牌檢視。</div>
-   <button class="btn gold" style="width:100%;margin-top:10px" onclick="closePackModal()">收下卡牌，完成拆封</button>
- </div>
-</div></div>
-<div id="viewer" class="modal" onclick="if(event.target===this)closeViewer()"><div class="sheet"><div class="sheet-head"><h2 id="viewerTitle">3D 卡牌檢視</h2><button class="close" onclick="closeViewer()">✕</button></div><div class="card-3d-stage"><div class="card-3d" id="card3d" onpointermove="tiltCard(event)" onpointerleave="resetTilt()"><div class="face"><div class="cmeta"><b id="vElement">草</b><b>HP <span id="vHp">60</span></b></div><div class="bigart"><span id="vEmoji">🌱</span></div><div class="ctitle" id="vName">刺尾莓</div><div class="cmove" id="vMove">咬 10</div><div style="font-size:13px;color:#4c7a3f;margin-top:6px;font-weight:800" id="vEvo"></div><div style="font-size:13px;color:#71859a;margin-top:8px;line-height:1.4" id="vDesc"></div><div class="shine"></div></div></div></div><div class="notice">拖曳／滑動卡牌可查看立體傾斜效果；點擊收藏卡牌會開啟 3D 檢視。<br><button class="btn light" style="margin-top:9px" onclick="closeViewer();openCardDetail(Number(document.getElementById('vName').dataset.id)||1)">查看卡牌操作</button></div></div></div>
-<div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div class="sheet"><div class="sheet-head"><h2 id="modalTitle">卡牌</h2><button class="close" onclick="closeModal()">✕</button></div><div id="modalBody"></div></div></div>
+<div id="taskbar">
+    <button id="start-btn">開始</button>
+    <div class="quick-launch" id="quickLaunchArea"><div class="quick-launch-item" title="我的儲存庫"><span class="emoji-icon" style="font-size:24px;">📁</span></div><div class="quick-launch-item" title="系統設定"><span class="emoji-icon" style="font-size:24px;">⚙️</span></div></div>
+    <div id="clock" class="taskbar-time">下午01:48</div>
+</div>
 
 <script>
-const DB=[
-{id:1,name:"刺尾莓",hp:60,el:"草",rarity:2,qty:2,emoji:"🌱",spr:"ciweimei",move:"咬 10",desc:"森林裡常見的果實型萌獸，受到傷害時會散發甜香。",stage:0,evolvesFrom:null,retreat:1},
-{id:2,name:"甲殼熊",hp:80,el:"草",rarity:2,qty:2,emoji:"🦔",spr:"jiaqiaoxiong",move:"藤蔓一擊 30",desc:"背甲能吸收森林的陽光，擅長耐久戰。",stage:0,evolvesFrom:null,retreat:1},
-{id:3,name:"狩獵風蝶",hp:130,el:"草",rarity:3,qty:3,emoji:"🦋",spr:"shoulifengdie",move:"進化飛行 30+",desc:"高速飛行的風蝶，能在花海中瞬間改變方向。",stage:2,evolvesFrom:4,retreat:2},
-{id:4,name:"居甲獸",hp:80,el:"草",rarity:2,qty:2,emoji:"🪲",spr:"jujiashou",move:"藤影一擊 20",desc:"擅長潛伏在古樹陰影下，是刺尾莓成長後的模樣。",stage:1,evolvesFrom:1,retreat:1},
-{id:5,name:"觸手百合",hp:90,el:"水",rarity:1,qty:1,emoji:"🌸",spr:"chushoubaihe",move:"吸取一下 40",desc:"會吸收附近的水氣恢復體力。",stage:2,evolvesFrom:15,retreat:1},
-{id:6,name:"搖籃百合",hp:150,el:"草",rarity:1,qty:1,emoji:"🌺",spr:"yaolanbaihe",move:"藤蔓吸取 70",desc:"成熟後會形成巨大的花冠。",stage:0,evolvesFrom:null,retreat:2},
-{id:7,name:"風法師",hp:60,el:"超能",rarity:4,qty:4,emoji:"🧙",spr:"fengfashi",move:"旋風 10",desc:"能召喚小型氣旋干擾敵人。",stage:0,evolvesFrom:null,retreat:1},
-{id:8,name:"音箱蜂",hp:90,el:"雷",rarity:4,qty:4,emoji:"🐝",spr:"yinxiangfeng",move:"聲爆 50",desc:"翅膀振動能產生節奏性的雷電。",stage:0,evolvesFrom:null,retreat:1},
-{id:9,name:"三蜜蜂",hp:50,el:"草",rarity:4,qty:4,emoji:"🐝",spr:"sanmifeng",move:"噴蜜 30",desc:"三隻夥伴會以花蜜形成護盾。",stage:0,evolvesFrom:null,retreat:0},
-{id:10,name:"蒼藍獸",hp:60,el:"水",rarity:2,qty:2,emoji:"🐳",spr:"canglanshou",move:"深海衝擊 30",desc:"生活於深海的溫和巨獸，水滴鹿尚未成長時的樣貌。",stage:0,evolvesFrom:null,retreat:1},
-{id:11,name:"小鳴蜥",hp:70,el:"無",rarity:3,qty:1,emoji:"🦎",spr:"xiaomingxi",move:"硬殼攻擊 20",desc:"受到攻擊時會發出高頻鳴叫。",stage:0,evolvesFrom:null,retreat:1},
-{id:12,name:"破夜輪",hp:110,el:"雷",rarity:3,qty:1,emoji:"🐲",spr:"poyelun",move:"迴旋攻擊 70",desc:"夜空巡航者，尾端帶有電弧，由雷角犀蛻變而成。",stage:1,evolvesFrom:16,retreat:2},
-{id:13,name:"火焰狐",hp:90,el:"火",rarity:3,qty:0,emoji:"🦊",spr:"huoyanhu",move:"火花 40",desc:"能把尾巴的火焰凝成小型火球。",stage:0,evolvesFrom:null,retreat:1},
-{id:14,name:"熔岩龜",hp:120,el:"火",rarity:2,qty:0,emoji:"🐢",spr:"rongyangui",move:"熔岩砲 60",desc:"背甲內儲存著熔岩般的能量，是火焰狐的進化型態。",stage:1,evolvesFrom:13,retreat:2},
-{id:15,name:"水滴鹿",hp:70,el:"水",rarity:2,qty:0,emoji:"🦌",spr:"shuidilu",move:"水彈 30",desc:"森林溪流的守護者，由蒼藍獸成長而來。",stage:1,evolvesFrom:10,retreat:1},
-{id:16,name:"雷角犀",hp:100,el:"雷",rarity:3,qty:0,emoji:"🐏",spr:"leijiaoyang",move:"雷角衝刺 50",desc:"角上的電光越亮，攻擊越強。",stage:0,evolvesFrom:null,retreat:1},
-{id:17,name:"月影貓",hp:80,el:"超能",rarity:3,qty:0,emoji:"🐈",spr:"yueyingmao",move:"月光 40",desc:"能利用月光製造幻象，是風法師的進化型態。",stage:1,evolvesFrom:7,retreat:1},
-{id:18,name:"岩鎧獸",hp:140,el:"無",rarity:2,qty:0,emoji:"🦏",spr:"yankaishou",move:"岩鎧重擊 60",desc:"厚重岩甲 provide 優秀的防禦。",stage:0,evolvesFrom:null,retreat:2},
-{id:19,name:"星羽鳥",hp:90,el:"超能",rarity:4,qty:0,emoji:"🦉",spr:"xingyuniao",move:"星塵 50",desc:"翅膀會留下星光軌跡，由月影貓再進化而來。",stage:2,evolvesFrom:17,retreat:1},
-{id:20,name:"花冠鹿",hp:100,el:"草",rarity:4,qty:0,emoji:"🦄",spr:"huaguanlu",move:"花冠爆發 60",desc:"稀有的花園守護者。",stage:0,evolvesFrom:null,retreat:2}
-];
-const TRAINERS=[
- {id:101,name:"甜莓補給",kind:"item",icon:"🍓",desc:"為主戰萌獸恢復 20 點HP。",qty:2},
- {id:102,name:"能量清泉",kind:"item",icon:"💧",desc:"立即額外附加 1 點能量，不佔用每回合的附能限額。",qty:1},
- {id:103,name:"訓練師的號令",kind:"supporter",icon:"📣",desc:"本回合攻擊傷害 +15。每回合限使用 1 張支援者卡。",qty:2},
- {id:104,name:"回聲競技場",kind:"stadium",icon:"🏟️",desc:"佈置後場上生效：雙方每回合結束時恢復 10 點HP，直到被其他競技場卡取代。",qty:1}
-];
-let state=JSON.parse(localStorage.getItem("moeCardSave")||"null")||{coin:1280,gem:120,wins:7,claimed:false,deck:[1,2,3,5,7,8,9],quest:{battle:0,collect:0,open:0}};
-if(state.cardQty)DB.forEach(c=>{if(state.cardQty[c.id]!=null)c.qty=state.cardQty[c.id]});
-if(state.trainerQty)TRAINERS.forEach(t=>{if(state.trainerQty[t.id]!=null)t.qty=state.trainerQty[t.id]});
-let sortMode="new", currentBattle=null, collectionMode="creature";
-let justAddedIds=new Set(), justNewIds=new Set();
-let battleSetup={active:null,bench:[]};
-const $=s=>document.querySelector(s);
-const cardById=id=>DB.find(c=>c.id===id);
+    // ======================= 內嵌預設設定 (由 dashboard_full.json 整合) =======================
+    const BUNDLED_CONFIG = {
+  "theme": "xp",
+  "wallpaperType": "image",
+  "wallpaperValue": "https://images.pexels.com/photos/388415/pexels-photo-388415.jpeg",
+  "github": {
+    "username": "kaojarher",
+    "repoConfig": {
+      "projects": [
+        "Dor","OfficeLeanTool","Cardnote","Mingpan","FilmScaner","potocollage",
+        "NanoMarkRemove","Clunar-","officetool","Mydesktop","HEDIT",
+        "ApolloGuidanceComputer","meetingroom","RPABlockly","dorotextgame","kao360",
+        "news","C11sim","Elisa1","Myphone","LeanQA","Myagent","Mdedit","Mytoolcard",
+        "Camera","flysim","utramanbattlecard","artemis2","HtmlAgent","ISS","minilooi",
+        "sha","fanranrpg","fanran","blog-content"
+      ],
+      "githubUsername": "kaojarher",
+      "userModified": false
+    }
+  },
+  "shortcuts": [
+    {"id":1,"name":"我的儲存庫","iconType":"emoji","icon":"📁","actionType":"function","actionValue":"openWindow('repo-window')","pinToTaskbar":true},
+    {"id":2,"name":"系統設定","iconType":"emoji","icon":"⚙️","actionType":"function","actionValue":"openWindow('settings-window')","pinToTaskbar":true},
+    {"id":3,"name":"關於","iconType":"emoji","icon":"ℹ️","actionType":"function","actionValue":"showAbout()","pinToTaskbar":false},
+    {"id":100,"name":"凡人","iconType":"emoji","icon":"🧘","actionType":"url","actionValue":"https://kaojarher.github.io/fanran/","pinToTaskbar":false},
+    {"id":112,"name":"GITHUB","iconType":"emoji","icon":"⚙️","actionType":"url","actionValue":"https://github.com/","pinToTaskbar":false},
+    {"id":101,"name":"flysimuation","iconType":"emoji","icon":"🛩","actionType":"url","actionValue":"https://kaojarher.github.io/flysim/","pinToTaskbar":false},
+    {"id":102,"name":"RPA自動化","iconType":"url","icon":"https://cdn-icons-png.freepik.com/512/9255/9255645.png","actionType":"url","actionValue":"https://kaojarher.github.io/RPABlockly/","pinToTaskbar":false},
+    {"id":103,"name":"HEDIT","iconType":"url","icon":"https://cdn-icons-png.flaticon.com/512/4248/4248142.png","actionType":"url","actionValue":"https://kaojarher.github.io/HEDIT/","pinToTaskbar":false},
+    {"id":104,"name":"ISS國際航空站","iconType":"emoji","icon":"🛰","actionType":"url","actionValue":"https://kaojarher.github.io/ISS/","pinToTaskbar":false},
+    {"id":105,"name":"LOOI","iconType":"url","icon":"https://static.vecteezy.com/system/resources/previews/025/785/710/non_2x/cute-robot-head-icon-logo-design-illustration-bot-robotic-logo-for-business-design-template-with-futuristic-flat-black-minimalist-style-isolated-on-white-background-vector.jpg","actionType":"url","actionValue":"https://kaojarher.github.io/minilooi/","pinToTaskbar":false},
+    {"id":106,"name":"MD檔編輯器","iconType":"emoji","icon":"📑","actionType":"url","actionValue":"https://kaojarher.github.io/Mdedit/","pinToTaskbar":false},
+    {"id":107,"name":"網路會議室","iconType":"url","icon":"https://cdn-icons-png.flaticon.com/512/17588/17588666.png","actionType":"url","actionValue":"https://kaojarher.github.io/meetingroom/","pinToTaskbar":false},
+    {"id":108,"name":"瀏覽器","iconType":"url","icon":"https://images.icon-icons.com/836/PNG/512/Google_Chrome_icon-icons.com_66794.png","actionType":"url","actionValue":"https://www.google.com/","pinToTaskbar":false},
+    {"id":109,"name":"NEWS","iconType":"url","icon":"https://www.citypng.com/public/uploads/preview/free-newspaper-news-icon-png-701751694975114q0xwdrzcy0.png","actionType":"url","actionValue":"https://kaojarher.github.io/news/","pinToTaskbar":false},
+    {"id":110,"name":"Instax camera","iconType":"url","icon":"https://img.favpng.com/24/18/3/instant-camera-polaroid-corporation-icon-png-favpng-LZ434LBPmEWP62kVZiYfKSimB.jpg","actionType":"url","actionValue":"https://kaojarher.github.io/Camera/","pinToTaskbar":false},
+    {"id":111,"name":"失落的封印","iconType":"url","icon":"https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiIS3O3_NxCLfmPXlMYwTfNKA8T1k4SrfyHIAQ-RjgU1QRamHu-t5IT7hYDvLQB05pBBjlFC4Dca-WUbbzQYIqbYAMWgueA3VYTcpLEqM4NBxBrbkhJmtAuXawVKVPDdSo4EuIg-cX7UJTX/s640/110527_90_sldfy000.jpg","actionType":"url","actionValue":"https://kaojarher.github.io/Dor/","pinToTaskbar":false},
+    {"id":113,"name":"SimCityEmoji","iconType":"emoji","icon":"🌁","actionType":"url","actionValue":"https://kaojarher.github.io/SimCityE/","pinToTaskbar":false},
+    {"id":114,"name":"MCP RPA自動化工具","iconType":"url","icon":"https://cdn-icons-png.flaticon.com/512/8001/8001983.png","actionType":"url","actionValue":"https://kaojarher.github.io/MCPRPA/","pinToTaskbar":false},
+    {"id":115,"name":"相片拼貼工具","iconType":"emoji","icon":"🖼️","actionType":"url","actionValue":"https://kaojarher.github.io/potocollage/","pinToTaskbar":false},
+    {"id":116,"name":"小隻AI","iconType":"url","icon":"https://png.pngtree.com/png-vector/20250205/ourlarge/pngtree-ai-icon-png-image_15382528.png","actionType":"url","actionValue":"https://kaojarher.github.io/AiAide/","pinToTaskbar":false},
+    {"id":117,"name":"珍妮AI","iconType":"emoji","icon":"😊","actionType":"url","actionValue":"https://kaojarher.github.io/Janny/","pinToTaskbar":false},
+    {"id":118,"name":"類神經實驗室","iconType":"url","icon":"https://img.freepik.com/premium-vector/scientist-with-lab-icons_1294240-67530.jpg","actionType":"url","actionValue":"https://kaojarher.github.io/NeuralLab/","pinToTaskbar":false},
+    {"id":119,"name":"MazeWar1974","iconType":"url","icon":"https://www.shutterstock.com/image-vector/black-maze-icon-isolated-on-260nw-239033104.jpg","actionType":"url","actionValue":"https://kaojarher.github.io/1974MazeWar/","pinToTaskbar":false}
+  ],
+  "nextId": 120,
+  "groups": [
+    {"id":1,"name":"生產力工具","emoji":"📂","memberIds":[102,103,106,107,114]},
+    {"id":2,"name":"休閒娛樂","emoji":"📂","memberIds":[100,101,111,113,119]},
+    {"id":3,"name":"影像編修","emoji":"📂","memberIds":[110,115]},
+    {"id":4,"name":"人工智慧","emoji":"📂","memberIds":[105,116,117,118]}
+  ],
+  "nextGroupId": 5
+};
 
-/* 核心邏輯修改：若有 spr 精靈圖時直接顯示圖檔；沒有 spr 時顯示文字/Emoji */
-function artInner(c){
- if(!c)return"";
- return c.spr ? `<span class="art-sprite spr-${c.spr}"></span>` : (c.emoji || c.icon || "");
-}
-
-function packSpriteInner(key,fallbackEmoji){
- return fallbackEmoji;
-}
-const WEAKNESS={火:"草",水:"火",雷:"水",超能:"雷",草:"超能"};
-const RESISTANCE={火:"水",草:"火",超能:"草",雷:"超能",水:"雷"};
-const ELEMENT_ICON={草:"🌿",火:"🔥",水:"💧",雷:"⚡",超能:"✦",無:"●"};
-function evolutionChain(id){let chain=[],cur=cardById(id);while(cur){chain.unshift(cur);cur=cur.evolvesFrom?cardById(cur.evolvesFrom):null}return chain}
-function evolvesInto(id){return DB.filter(c=>c.evolvesFrom===id)}
-function anyCardById(id){return cardById(id)||TRAINERS.find(t=>t.id===id)}
-function save(){
- state.cardQty=Object.fromEntries(DB.map(c=>[c.id,c.qty]));
- state.trainerQty=Object.fromEntries(TRAINERS.map(t=>[t.id,t.qty]));
- localStorage.setItem("moeCardSave",JSON.stringify(state));
-}
-function toast(t){const x=$("#toast");x.textContent=t;x.classList.add("show");clearTimeout(window._toast);window._toast=setTimeout(()=>x.classList.remove("show"),1800)}
-function go(page){
- document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));$("#page-"+page).classList.add("active");
- document.querySelectorAll(".nav button").forEach(x=>x.classList.toggle("active",x.dataset.page===page));
- const titles={home:"自己的卡牌",collection:"自己的卡牌",deck:"我的牌組",battle:"對戰場",shop:"卡牌商店",mission:"任務中心",profile:"訓練師"};
- $("#pageTitle").textContent=titles[page]||"自己的卡牌";
- if(page==="collection")renderCollection();if(page==="deck")renderDeck();if(page==="battle")enterBattlePage();if(page==="mission")renderQuests();updateStats();
- window.scrollTo({top:0,behavior:"smooth"});
-}
-function updateStats(){
- $("#coin").textContent=state.coin;$("#gem").textContent=state.gem;$("#winCount").textContent=state.wins;
- $("#collectionCount").textContent=DB.filter(c=>c.qty>0).length;
-}
-function rarityName(n){return ["","◆","◆◆","◆◆◆","★"][n]||"★"}
-function stageBadge(c){return c.stage?`<span style="font-size:11px;background:#e3f0d8;color:#4c7a3f;border-radius:7px;padding:2px 6px;margin-left:4px;font-weight:900">🧬${c.stage===2?"二階":"一階"}</span>`:""}
-function cardHTML(c){
- const isNew=justAddedIds.has(c.id);
- return `<article class="card${isNew?" just-added":""}" onclick="openCard(${c.id})">
- ${justNewIds.has(c.id)?'<span class="new-ribbon">NEW</span>':''}
- <button class="fav" onclick="event.stopPropagation();toggleFav(${c.id})">${c.fav?"♥":"♡"}</button>
- <div class="card-top"><span>${c.el}</span><span class="hp">HP ${c.hp} <i class="element">${c.el==="火"?"🔥":c.el==="水"?"💧":c.el==="雷"?"⚡":c.el==="超能"?"✦":c.el==="草"?"🌿":"●"}</i></span></div>
- <div class="art"><span class="emoji">${artInner(c)}</span></div><div class="card-name">${c.name}${stageBadge(c)}</div><div class="move">${c.move}</div>
- <div class="card-bottom"><span class="rarity">${rarityName(c.rarity)}</span>${c.qty>1?`<span class="badge dup">×${c.qty} 重複</span>`:`<span class="badge">${c.qty}</span>`}</div></article>`;
-}
-function trainerHTML(t){
- const kindName={item:"物品卡",supporter:"支援者卡",stadium:"競技場卡"}[t.kind];
- return `<article class="card" onclick="openTrainerDetail(${t.id})">
- <div class="card-top"><span>${kindName}</span></div>
- <div class="art" style="background:linear-gradient(145deg,#eae6fb,#c9bef0);border-color:#d3c8ef"><span class="emoji">${artInner(t)}</span></div>
- <div class="card-name">${t.name}</div><div class="move">${t.desc}</div>
- <div class="card-bottom"><span class="rarity">訓練家卡</span><span class="badge">${t.qty}</span></div></article>`;
-}
-function renderHome(){ $("#homeCards").innerHTML=DB.filter(c=>c.qty>0).slice(0,6).map(cardHTML).join("")}
-function setCollectionMode(mode){
- collectionMode=mode;
- $("#tabCreature").classList.toggle("active",mode==="creature");
- $("#tabTrainer").classList.toggle("active",mode==="trainer");
- renderCollection();
-}
-function setSort(s){sortMode=s;document.querySelectorAll(".toolbar .pill").forEach((x,i)=>x.classList.remove("on"));renderCollection()}
-function renderCollection(){
- const q=$("#search").value.trim().toLowerCase();
- if(collectionMode==="trainer"){
-   $("#elementFilter").style.display="none";
-   let arr=TRAINERS.filter(t=>!q||t.name.toLowerCase().includes(q));
-   $("#collectionCards").innerHTML=arr.length?arr.map(trainerHTML).join(""):`<div class="empty">找不到符合條件的訓練家卡</div>`;
-   $("#totalCards").textContent=arr.reduce((n,t)=>n+t.qty,0);
-   return;
- }
- $("#elementFilter").style.display="";
- let el=$("#elementFilter").value;
- let arr=DB.filter(c=>(!q||c.name.toLowerCase().includes(q))&&(el==="all"||c.el===el));
- if(sortMode==="hp")arr.sort((a,b)=>b.hp-a.hp);if(sortMode==="rarity")arr.sort((a,b)=>b.rarity-a.rarity);if(sortMode==="qty")arr.sort((a,b)=>b.qty-a.qty);
- $("#collectionCards").innerHTML=arr.length?arr.map(cardHTML).join(""):`<div class="empty">找不到符合條件的卡牌</div>`;
- $("#totalCards").textContent=arr.reduce((n,c)=>n+c.qty,0);
-}
-function toggleFav(id){const c=cardById(id);c.fav=!c.fav;renderCollection();renderHome();toast(c.fav?"已加入最愛":"已取消最愛")}
-function openCard(id){
- const c=cardById(id);
- openViewer(id);
-} 
-function evoInfoHTML(c){
- const chain=evolutionChain(c.id),into=evolvesInto(c.id);
- let html=`<div class="notice" style="margin-top:8px"><b>🧬 進化資訊</b><br>`;
- html+= chain.length>1?"進化鏈："+chain.map(x=>x.name).join(" → "):"這是一張沒有進化前身的萌獸卡。";
- if(into.length)html+="<br>可進化為："+into.map(x=>x.name).join("、");
- html+="</div>";
- return html;
-}
-function sellPrice(c){return 10+c.rarity*15}
-function sellHTML(c){
- if(c.qty<=1)return "";
- const dupCount=c.qty-1,unit=sellPrice(c);
- return `<div class="notice" style="margin-top:8px;background:#fff5e0;color:#8a611c"><b>💰 你有 ${dupCount} 張重複的「${c.name}」</b><br>每張可販售 ${unit} 金幣（會保留最後 1 張）。</div><div style="display:flex;gap:8px;margin-top:8px"><button class="btn light" onclick="sellCard(${c.id},1)">賣 1 張（+${unit}）</button><button class="btn light" onclick="sellCard(${c.id},${dupCount})">全部賣出（+${unit*dupCount}）</button></div>`;
-}
-function sellCard(id,amount){
- const c=cardById(id);if(!c)return;
- amount=Math.min(amount,c.qty-1);
- if(amount<=0){toast("至少需保留 1 張，沒有多餘的重複卡可販售");return}
- const gain=sellPrice(c)*amount;
- c.qty-=amount;state.coin+=gain;
- save();renderHome();renderCollection();updateStats();
- toast(`已販售 ${amount} 張「${c.name}」，獲得 ${gain} 金幣`);
- openCardDetail(id);
-}
-function openCardDetail(id){
- const c=cardById(id);$("#modalTitle").textContent=c.name;
- $("#modalBody").innerHTML=`<div class="detail-card"><div class="card" style="padding:9px"><div class="card-top"><b>${c.el}系</b><b>HP ${c.hp}</b></div><div class="art"><span class="emoji">${artInner(c)}</span></div><div class="card-name">${c.name}${stageBadge(c)}</div><div class="move">${c.move}</div><div class="card-bottom"><span class="rarity">${rarityName(c.rarity)} 稀有度</span><span class="badge">${c.qty}</span></div></div></div><p style="font-size:15px">${c.desc}</p><div class="notice">持有 ${c.qty} 張。加入牌組時會依照「最多 4 張同名卡」限制。</div>${evoInfoHTML(c)}${sellHTML(c)}<div style="display:flex;gap:8px;margin-top:12px"><button class="btn" onclick="addDeck(${id});closeModal()">加入牌組</button><button class="btn light" onclick="closeModal()">關閉</button></div>`;
- $("#modal").classList.add("show");
-}
-function openTrainerDetail(id){
- const t=TRAINERS.find(x=>x.id===id);
- const kindName={item:"物品卡（可隨時使用）",supporter:"支援者卡（每回合限用 1 張）",stadium:"競技場卡（佈置後持續生效）"}[t.kind];
- $("#modalTitle").textContent=t.name;
- $("#modalBody").innerHTML=`<div class="detail-card"><div class="card" style="padding:9px"><div class="card-top"><b>${kindName}</b></div><div class="art" style="background:linear-gradient(145deg,#eae6fb,#c9bef0)"><span class="emoji">${artInner(t)}</span></div><div class="card-name">${t.name}</div><div class="card-bottom"><span class="rarity">訓練家卡</span><span class="badge">${t.qty}</span></div></div></div><p style="font-size:15px">${t.desc}</p><div class="notice">持有 ${t.qty} 張。訓練家卡現在會併入 60 張牌組，並套用「同名卡最多 4 張」的限制；對戰開局時，牌組中的訓練家卡會依張數進入你的道具區。</div><div style="display:flex;gap:8px;margin-top:12px"><button class="btn" onclick="addDeck(${id});closeModal()">加入牌組</button><button class="btn light" onclick="closeModal()">關閉</button></div>`;
- $("#modal").classList.add("show");
-}
-function closeModal(){$("#modal").classList.remove("show")}
-function openViewer(id){
- const c=cardById(id);if(!c)return;
- $("#viewerTitle").textContent=c.name+" · 3D";
- $("#vElement").textContent=c.el;$("#vHp").textContent=c.hp;$("#vEmoji").innerHTML=artInner(c);
- $("#vName").textContent=c.name;$("#vName").dataset.id=String(id);$("#vMove").textContent=c.move;$("#vDesc").textContent=c.desc;
- const chain=evolutionChain(id);
- $("#vEvo").textContent=chain.length>1?"🧬 進化鏈："+chain.map(x=>x.name).join(" → "):"";
- $("#card3d").style.transform="rotateX(0deg) rotateY(0deg) scale(1)";
- $("#viewer").classList.add("show");
-}
-function closeViewer(){$("#viewer").classList.remove("show")}
-function tiltCard(e){
- const el=$("#card3d"),r=el.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.height)/r.height-.5;
- el.style.transform=`rotateX(${(-y*18).toFixed(2)}deg) rotateY(${(x*22).toFixed(2)}deg) scale(1.03)`;
-}
-function resetTilt(){$("#card3d").style.transform="rotateX(0deg) rotateY(0deg) scale(1)"}
-function showHelp(){
- $("#modalTitle").textContent="遊戲規則";
- $("#modalBody").innerHTML=`<div class="notice"><b>核心玩法</b><br>① 收集萌獸卡牌與訓練家卡並管理收藏。<br>② 組成最多 60 張牌組，同名卡（萌獸卡、訓練家卡皆算）最多 4 張。<br>③ 每回合限附加 1 點能量，攻擊消耗全部能量造成傷害，威力隨累積能量提升。<br>④ 換位（撤退）需支付「該張主戰卡專屬」的能量費用，費用會標示在卡牌資訊中，不同卡牌可能不同。<br>⑤ 攻擊方屬性若剋制防守方屬性，傷害 ×1.5（火剋草／水剋火／雷剋水／超能剋雷／草剋超能）；反之若防守方對攻擊方具有抗性，傷害則 ×0.75（抗性與剋制互為鏡像、不會同時觸發）。<br>⑥ 手牌中標記 🧬 的卡可以進化目前的主戰萌獸，也可以進化備戰區中的萌獸。<br>⑦ 訓練家卡會併入牌組一起組建，並和萌獸卡一起放進同一個牌堆。<br>⑧ 開局會從牌堆抽 5 張作為起手手牌，之後每回合開始會自動抽 1 張；牌堆抽完就無法再抽卡。<br>⑨ 主戰卡昏倒時，若備戰區仍有萌獸，需點選一張頂替上場（不需消耗能量）；若備戰區已無萌獸可派，直接落敗。對手的主戰卡昏倒時也會依序換上牠的備戰區成員。<br>⑩ 雙方各有 6 張獎賞卡，取完對方全部獎賞卡即獲勝，己方獎賞卡被取完則落敗。<br><br><b>本作品定位</b><br>這是一個單檔、可離線遊玩的原創卡牌遊戲原型，採用與經典集換式卡牌相近的「收集／組牌／能量／對戰」結構，但卡牌、角色與數值均為原創。</div>`;
- $("#modal").classList.add("show");
-}
-function addDeck(id){
- const c=anyCardById(id),count=state.deck.filter(x=>x===id).length;
- if(!c||!c.qty){toast("尚未持有這張卡");return}
- if(state.deck.length>=60){toast("牌組已達 60 張");return}
- if(count>=4){toast("同名卡最多 4 張");return}
- state.deck.push(id);save();renderDeck();toast("已加入牌組");
-}
-function removeDeck(id){const i=state.deck.indexOf(id);if(i>=0){state.deck.splice(i,1);save();renderDeck()}}
-function clearDeck(){state.deck=[];save();renderDeck();toast("牌組已清空")}
-function autoDeck(){
- state.deck=[];let candidates=[...DB.filter(c=>c.qty>0),...TRAINERS.filter(t=>t.qty>0)].sort((a,b)=>(b.hp||0)-(a.hp||0));
- candidates.forEach(c=>{for(let i=0;i<Math.min(c.qty,4)&&state.deck.length<60;i++)state.deck.push(c.id)});
- while(state.deck.length<30&&candidates.length){const c=candidates[state.deck.length%candidates.length];if(state.deck.filter(x=>x===c.id).length<4)state.deck.push(c.id);else break}
- save();renderDeck();toast("已建立智慧牌組");
-}
-function renderDeck(){
- const groups={};state.deck.forEach(id=>groups[id]=(groups[id]||0)+1);
- $("#deckCount").textContent=state.deck.length;$("#deckProgress").style.width=Math.min(100,state.deck.length/60*100)+"%";
- $("#deckList").innerHTML=Object.entries(groups).map(([id,n])=>{const c=anyCardById(+id);if(!c)return"";const isTrainer=!cardById(+id);return `<div class="deckrow"><div class="thumb">${artInner(c)}</div><div><b>${c.name}</b><small style="display:block;color:#7c8fa1;font-weight:bold">${isTrainer?"訓練家卡":c.el+" · HP "+c.hp}</small></div><div class="qty"><button onclick="removeDeck(${id})">−</button><b>${n}</b><button onclick="addDeck(${id})">＋</button></div></div>`}).join("")||`<div class="empty">牌組目前是空的，請到卡牌收藏加入卡片。</div>`;
-}
-function saveDeck(){save();toast("牌組已儲存")}
-function enterBattlePage(){
- if(currentBattle){
-   $("#battleSetupPanel").style.display="none";
-   $("#battleWrap").style.display="";
-   initBattle();
- }else{
-   $("#battleWrap").style.display="none";
-   $("#battleSetupPanel").style.display="";
-   renderBattleSetup();
- }
-}
-function renderBattleSetup(){
- const basics=[...new Set(state.deck)].map(id=>cardById(id)).filter(c=>c&&c.stage===0);
- if(!battleSetup.active||!basics.some(c=>c.id===battleSetup.active))battleSetup={active:null,bench:[]};
- battleSetup.bench=battleSetup.bench.filter(id=>basics.some(c=>c.id===id));
- if(!basics.length){
-   $("#setupWarning").innerHTML=`<div class="notice" style="background:#fde7e7;color:#a23a3a;margin-bottom:10px">你的牌組中沒有任何「基礎」萌獸卡，請先到牌組頁面加入基礎卡才能開戰。</div>`;
-   $("#setupGrid").innerHTML="";
-   $("#setupStartBtn").disabled=true;
-   $("#setupSummary").textContent="牌組缺少基礎卡";
-   return;
- }
- $("#setupWarning").innerHTML="";
- $("#setupGrid").innerHTML=basics.map(c=>{
-   const count=state.deck.filter(x=>x===c.id).length;
-   const isActive=battleSetup.active===c.id,isBench=battleSetup.bench.includes(c.id);
-   return `<article class="card${isActive?" setup-active":""}${isBench?" setup-bench":""}" onclick="toggleSetupCard(${c.id})">
-     ${isActive?'<span class="setup-pick">先發</span>':isBench?'<span class="setup-pick bench">備戰</span>':""}
-     <div class="art"><span class="emoji">${artInner(c)}</span></div>
-     <div class="card-name">${c.name}</div><div class="move">${c.move}</div>
-     <div class="card-bottom"><span class="rarity">${rarityName(c.rarity)}</span><span class="badge">牌組×${count}</span></div>
-   </article>`;
- }).join("");
- $("#setupStartBtn").disabled=!battleSetup.active;
- $("#setupSummary").textContent=battleSetup.active
-   ? `先發：${cardById(battleSetup.active).name} · 備戰：${battleSetup.bench.length}/3${battleSetup.bench.length?"（"+battleSetup.bench.map(id=>cardById(id).name).join("、")+"）":""}`
-   : "尚未選擇先發卡牌，請先點選一張作為先發";
-}
-function toggleSetupCard(id){
- if(!battleSetup.active){battleSetup.active=id;renderBattleSetup();return}
- if(id===battleSetup.active){toast("這張已經是先發卡，若要更換請按「重設」");return}
- const i=battleSetup.bench.indexOf(id);
- if(i>=0)battleSetup.bench.splice(i,1);
- else{
-   if(battleSetup.bench.length>=3){toast("備戰區最多 3 張");return}
-   battleSetup.bench.push(id);
- }
- renderBattleSetup();
-}
-function resetBattleSetup(){battleSetup={active:null,bench:[]};renderBattleSetup()}
-function autoBattleSetup(){
- const basics=[...new Set(state.deck)].map(id=>cardById(id)).filter(c=>c&&c.stage===0).sort((a,b)=>b.hp-a.hp);
- if(!basics.length){toast("牌組中沒有基礎卡");return}
- battleSetup.active=basics[0].id;
- battleSetup.bench=basics.slice(1,4).map(c=>c.id);
- renderBattleSetup();
- toast("已自動安排戰場");
-}
-function confirmBattleSetup(){
- if(!battleSetup.active){toast("請先選擇先發卡牌");return}
- startArenaBattle(battleSetup.active,battleSetup.bench.slice());
-}
-function shuffle(arr){
- const a=arr.slice();
- for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}
- return a;
-}
-function drawCard(n=1){
- if(!currentBattle)return 0;
- let drawn=0;
- for(let i=0;i<n;i++){
-   if(!currentBattle.drawPile.length){battleLog("🃏 牌堆已空，這次沒有抽到卡。");break}
-   const id=currentBattle.drawPile.shift();
-   const isTrainer=TRAINERS.some(t=>t.id===id);
-   if(isTrainer)currentBattle.trainerHand.push(id);else currentBattle.hand.push(id);
-   const nm=(anyCardById(id)||{}).name||"卡牌";
-   battleLog(`🃏 從牌堆抽了 1 張「${nm}」。`);
-   drawn++;
- }
- return drawn;
-}
-function startPlayerTurn(){
- currentBattle.round++;currentBattle.turn=true;currentBattle.mustSwitch=false;
- currentBattle.energyUsed=false;currentBattle.evolvedThisTurn=false;currentBattle.supporterUsedThisTurn=false;
- $("#battleTurn").textContent="你的回合";
- drawCard(1);
- initBattle();
-}
-function startArenaBattle(activeId,benchIds){
- const activeCard=cardById(activeId),fieldIds=new Set([activeId,...benchIds]);
- const drawPile=shuffle(state.deck.filter(id=>!fieldIds.has(id)));
- const enemyRoster=[3,4,10],enemyStart=cardById(enemyRoster[0]);
- currentBattle={active:activeId,playerHp:activeCard.hp,playerMaxHp:activeCard.hp,
-   enemyActive:enemyRoster[0],enemyBench:enemyRoster.slice(1),
-   enemyHp:enemyStart.hp,enemyMaxHp:enemyStart.hp,energy:0,turn:true,round:1,mustSwitch:false,
-   prizes:6,enemyPrizes:6,energyUsed:false,evolvedThisTurn:false,supporterUsedThisTurn:false,
-   dmgBonusThisTurn:0,activeStadium:null,hand:[],bench:benchIds,trainerHand:[],drawPile:drawPile};
- $("#battleSetupPanel").style.display="none";
- $("#battleWrap").style.display="";
- $("#battleLog").innerHTML=`對戰開始！你已派出 <b>${activeCard.name}</b> 為先發${benchIds.length?"，備戰區有 "+benchIds.length+" 張":""}。可以附加能量、攻擊、換位或進化，也能使用道具卡輔助戰鬥。<br>`;
- drawCard(5);
- initBattle();
-}
-function leaveBattle(){
- if(currentBattle&&!confirm("確定要放棄目前對戰並重新安排戰場嗎？"))return;
- currentBattle=null;
- $("#battleWrap").style.display="none";
- $("#battleSetupPanel").style.display="";
- renderBattleSetup();
-}
-function initBattle(){
- if(!currentBattle){
-   const startCard=cardById(state.deck[0]||1);
-   const enemyRoster=[3,4,10],enemyStart=cardById(enemyRoster[0]);
-   const drawPile=shuffle(state.deck.filter(id=>id!==startCard.id));
-   currentBattle={active:startCard.id,playerHp:startCard.hp,playerMaxHp:startCard.hp,
-     enemyActive:enemyRoster[0],enemyBench:enemyRoster.slice(1),
-     enemyHp:enemyStart.hp,enemyMaxHp:enemyStart.hp,energy:0,turn:true,round:1,mustSwitch:false,
-     prizes:6,enemyPrizes:6,energyUsed:false,evolvedThisTurn:false,supporterUsedThisTurn:false,
-     dmgBonusThisTurn:0,activeStadium:null,hand:[],bench:[],trainerHand:[],drawPile:drawPile};
-   drawCard(5);
- }
- const c=cardById(currentBattle.active), enemy=cardById(currentBattle.enemyActive);
- $("#playerName").textContent=c.name;$("#playerEmoji").innerHTML=artInner(c);$("#playerHp").textContent=currentBattle.playerHp;$("#playerMaxHp").textContent=currentBattle.playerMaxHp;
- $("#enemyName").textContent=enemy.name;$("#enemyEmoji").innerHTML=artInner(enemy);$("#enemyHp").textContent=currentBattle.enemyHp;$("#enemyMaxHp").textContent=currentBattle.enemyMaxHp;
- $("#battleEnergyCount").textContent=(ELEMENT_ICON[c.el]||"⚡")+currentBattle.energy;
- $("#roundNo").textContent=currentBattle.round;
- $("#drawPileCount").textContent=currentBattle.drawPile.length;
- $("#enemyHpBar").style.width=Math.max(0,currentBattle.enemyHp/currentBattle.enemyMaxHp*100)+"%";$("#playerHpBar").style.width=Math.max(0,currentBattle.playerHp/currentBattle.playerMaxHp*100)+"%";
- $("#bench").innerHTML=currentBattle.bench.map(id=>{const x=cardById(id);return `<div class="slot${currentBattle.mustSwitch?" setup-bench":""}" onclick="battleSwitch(${id})">${artInner(x)}</div>`}).join("")||"<div class='slot'>＋</div>";
- $("#enemyBench").innerHTML=currentBattle.enemyBench.map(id=>{const x=cardById(id);return `<div class="slot">${artInner(x)}</div>`}).join("")||"<div class='slot'>－</div>";
- $("#handZone").innerHTML=currentBattle.hand.map(id=>{const x=cardById(id);const fieldIds=[currentBattle.active,...currentBattle.bench];const canEvo=fieldIds.includes(x.evolvesFrom);return `<div class="hand-card" style="${canEvo?"box-shadow:0 0 0 2px #78b85e,0 5px 10px #46647a33":""}" onclick="${canEvo?"evolveCard("+id+")":"openViewer("+id+")"}">${artInner(x)}<small>${canEvo?"🧬"+x.name:x.name}</small></div>`}).join("")||"<div style='font-size:13px;color:#8aa;padding:6px'>手牌已空</div>";
- $("#trainerZone").innerHTML=currentBattle.trainerHand.map(id=>{const t=TRAINERS.find(x=>x.id===id);return `<div class="hand-card" onclick="useTrainer(${id})">${artInner(t)}<small>${t.name}</small></div>`}).join("")||"<div style='font-size:13px;color:#8aa;padding:6px'>道具卡已用完</div>";
- $("#playerPrizes").innerHTML=Array.from({length:currentBattle.prizes},()=>`<div class="prize">★</div>`).join("")||"<span style='font-size:12px;color:#7c8fa1'>已取完</span>";
- $("#enemyPrizes").innerHTML=Array.from({length:currentBattle.prizes},()=>`<div class="prize">★</div>`).join("")||"<span style='font-size:12px;color:#7c8fa1'>已取完</span>";
- if(currentBattle.mustSwitch){$("#battleTurn").textContent="請選擇替補上場"}
-}
-function battleLog(t){$("#battleLog").innerHTML+=t+"<br>";$("#battleLog").scrollTop=$("#battleLog").scrollHeight}
-function battleEnergy(){
- if(!currentBattle||!currentBattle.turn)return;
- if(currentBattle.energyUsed){toast("本回合已附加過能量，每回合限 1 次");return}
- const c=cardById(currentBattle.active);
- currentBattle.energy=Math.min(5,currentBattle.energy+1);
- currentBattle.energyUsed=true;
- battleLog(`${ELEMENT_ICON[c.el]||"⚡"} 你附加 1 點「${c.el}屬性」能量（每回合限附加 1 次）。`);
- $("#battleEnergyCount").textContent=(ELEMENT_ICON[c.el]||"⚡")+currentBattle.energy;toast("能量 +1");
-}
-function playAttackEffect(dmg){
- const flash=$("#attackFlash"),slash=$("#slash"),pop=$("#damagePop");
- pop.textContent="-"+dmg;
- [flash,slash,pop].forEach(x=>{x.classList.remove("show");void x.offsetWidth;x.classList.add("show")});
- if(navigator.vibrate)navigator.vibrate([35,45,70]);
- const wrap=$("#battleWrap");wrap.animate([{transform:"translateX(0)"},{transform:"translateX(-5px)"},{transform:"translateX(5px)"},{transform:"translateX(-3px)"},{transform:"translateX(0)"}],{duration:330});
-}
-function evolveCard(id){
- if(!currentBattle||!currentBattle.turn){toast("請在你的回合操作");return}
- if(currentBattle.evolvedThisTurn){toast("本回合已進化過，每回合限 1 次");return}
- const evo=cardById(id);
- if(!evo){toast("找不到這張卡");return}
- if(evo.evolvesFrom===currentBattle.active){
-   const cur=cardById(currentBattle.active);
-   const dmgTaken=currentBattle.playerMaxHp-currentBattle.playerHp;
-   currentBattle.active=id;
-   currentBattle.playerMaxHp=evo.hp;
-   currentBattle.playerHp=Math.max(1,evo.hp-dmgTaken);
-   currentBattle.evolvedThisTurn=true;
-   currentBattle.hand=currentBattle.hand.filter(h=>h!==id);
-   battleLog(`🧬 ${cur.name} 進化成 <b>${evo.name}</b>！HP 上限提升為 ${evo.hp}。`);
-   toast("進化成功！");
-   initBattle();
-   return;
- }
- const benchIdx=currentBattle.bench.indexOf(evo.evolvesFrom);
- if(benchIdx>=0){
-   const cur=cardById(currentBattle.bench[benchIdx]);
-   currentBattle.bench[benchIdx]=id;
-   currentBattle.evolvedThisTurn=true;
-   currentBattle.hand=currentBattle.hand.filter(h=>h!==id);
-   battleLog(`🧬 備戰區的 ${cur.name} 進化成 <b>${evo.name}</b>！`);
-   toast("備戰區進化成功！");
-   initBattle();
-   return;
- }
- toast("這張卡無法進化目前場上的萌獸");
-}
-function useTrainer(id){
- if(!currentBattle||!currentBattle.turn){toast("請在你的回合操作");return}
- if(!currentBattle.trainerHand.includes(id)){toast("這張卡已經用過了");return}
- const t=TRAINERS.find(x=>x.id===id);
- if(t.kind==="supporter"&&currentBattle.supporterUsedThisTurn){toast("每回合限使用 1 張支援者卡");return}
- if(id===101){
-   currentBattle.playerHp=Math.min(currentBattle.playerMaxHp,currentBattle.playerHp+20);
-   battleLog(`🍓 使用「${t.name}」，恢復 20 點HP。`);
- }else if(id===102){
-   currentBattle.energy=Math.min(5,currentBattle.energy+1);
-   battleLog(`💧 使用「${t.name}」，額外附加 1 點能量（不佔用每回合限額）。`);
- }else if(id===103){
-   currentBattle.dmgBonusThisTurn=(currentBattle.dmgBonusThisTurn||0)+15;
-   currentBattle.supporterUsedThisTurn=true;
-   battleLog(`📣 使用「${t.name}」，本次攻擊傷害 +15。`);
- }else if(id===104){
-   currentBattle.activeStadium=id;
-   battleLog(`🏟️ 佈置了「${t.name}」，雙方每回合結束將恢復 10 點HP。`);
- }
- {const idx=currentBattle.trainerHand.indexOf(id);if(idx>=0)currentBattle.trainerHand.splice(idx,1);}
- toast("已使用「"+t.name+"」");
- initBattle();
-}
-function attack(){
- if(!currentBattle||!currentBattle.turn)return;
- const atk=cardById(currentBattle.active),def=cardById(currentBattle.enemyActive);
- let dmg=20+currentBattle.energy*10+(currentBattle.dmgBonusThisTurn||0),bonus=false,resisted=false;
- if(WEAKNESS[atk.el]===def.el){dmg=Math.round(dmg*1.5);bonus=true}
- else if(RESISTANCE[atk.el]===def.el){dmg=Math.max(1,Math.round(dmg*0.75));resisted=true}
- currentBattle.enemyHp=Math.max(0,currentBattle.enemyHp-dmg);currentBattle.energy=0;currentBattle.dmgBonusThisTurn=0;
- playAttackEffect(dmg);
- battleLog(`💥 <b>「${atk.move}」</b> 發動！${bonus?"屬性剋制！傷害 ×1.5，":resisted?"對方具有抗性！傷害 ×0.75，":""}造成 ${dmg} 點傷害！`);
- if(currentBattle.enemyHp<=0){
-   currentBattle.enemyPrizes=Math.max(0,currentBattle.enemyPrizes-1);
-   state.coin+=100;state.quest.battle++;save();
-   battleLog(`🏆 擊倒對方的 <b>${def.name}</b>！取得 1 張獎賞卡（剩 ${currentBattle.enemyPrizes} 張）。`);
-   if(currentBattle.enemyPrizes<=0){endBattle(true);return}
-   if(!currentBattle.enemyBench.length){battleLog("🏆 對方備戰區已無其他萌獸可以派上場，戰鬥結束！");endBattle(true);return}
-   const nextId=currentBattle.enemyBench.shift(),nextCard=cardById(nextId);
-   currentBattle.enemyActive=nextId;currentBattle.enemyHp=nextCard.hp;currentBattle.enemyMaxHp=nextCard.hp;
-   battleLog(`🤖 對方派出 <b>${nextCard.name}</b> 頂替上場！`);
-   currentBattle.turn=false;
-   setTimeout(()=>{startPlayerTurn()},650);return
- }
- currentBattle.turn=false;$("#battleTurn").textContent="AI 回合";initBattle();
- setTimeout(()=>enemyTurn(),650);
-}
-function enemyTurn(){
- if(!currentBattle)return;
- const atk=cardById(currentBattle.enemyActive),def=cardById(currentBattle.active);
- let dmg=15+Math.floor(Math.random()*16),bonus=false,resisted=false;
- if(WEAKNESS[atk.el]===def.el){dmg=Math.round(dmg*1.5);bonus=true}
- else if(RESISTANCE[atk.el]===def.el){dmg=Math.max(1,Math.round(dmg*0.75));resisted=true}
- currentBattle.playerHp=Math.max(0,currentBattle.playerHp-dmg);
- battleLog(`🤖 AI 發動攻擊，${bonus?"屬性剋制！":resisted?"你的萌獸具有抗性！":""}造成 ${dmg} 點傷害。`);
- if(currentBattle.playerHp<=0){
-   currentBattle.prizes=Math.max(0,currentBattle.prizes-1);
-   battleLog(`❌ <b>${def.name}</b> 昏倒了！AI 取得 1 張獎賞卡（剩 ${currentBattle.prizes} 張）。`);
-   if(currentBattle.prizes<=0){endBattle(false);return}
-   if(!currentBattle.bench.length){battleLog("😵 備戰區已無其他萌獸可以派上場，戰鬥結束。");endBattle(false);return}
-   currentBattle.mustSwitch=true;
-   battleLog("⚠️ 請從備戰區點選一張萌獸頂替上場（強制換位不需消耗能量）。");
-   initBattle();
-   return;
- }
- if(currentBattle.activeStadium===104){
-   currentBattle.playerHp=Math.min(currentBattle.playerMaxHp,currentBattle.playerHp+10);
-   currentBattle.enemyHp=Math.min(currentBattle.enemyMaxHp,currentBattle.enemyHp+10);
-   battleLog("🏟️ 回聲競技場生效：雙方恢復 10 點HP。");
- }
- startPlayerTurn();
-}
-function endBattle(won){
- if(won){state.wins++;state.coin+=200;}
- save();updateStats();
- $("#modalTitle").textContent=won?"🏆 對戰勝利":"💦 對戰落敗";
- $("#modalBody").innerHTML=`<div class="notice"><b>${won?"恭喜！你已取完全部獎賞卡。":"你的獎賞卡已被對方取完。"}</b><br>${won?"獲得 200 金幣獎勵。":"調整牌組或屬性搭配後再挑戰一次吧！"}</div><div style="display:flex;gap:8px;margin-top:12px"><button class="btn" onclick="closeModal();restartBattle()">再戰一局</button><button class="btn light" onclick="closeModal();go('home')">返回首頁</button></div>`;
- $("#modal").classList.add("show");
- currentBattle=null;
-}
-function restartBattle(){currentBattle=null;go("battle")}
-function battleSwitch(id){
- if(!currentBattle)return;
- if(id){
-   if(currentBattle.mustSwitch){
-     if(!currentBattle.bench.includes(id)){toast("請選擇備戰區中的萌獸");return}
-     const c=cardById(id);
-     currentBattle.bench=currentBattle.bench.filter(x=>x!==id);
-     currentBattle.active=id;currentBattle.playerMaxHp=c.hp;currentBattle.playerHp=c.hp;
-     battleLog(`🔁 派出 <b>${c.name}</b> 頂替上場！`);
-     toast("已派出替補上場");
-     startPlayerTurn();
-     return;
-   }
-   if(!currentBattle.turn){toast("請在你的回合操作");return}
-   if(id===currentBattle.active){toast("這張卡已經在場上");return}
-   const curCard=cardById(currentBattle.active);
-   const cost=curCard.retreat??1;
-   if(currentBattle.energy<cost){toast(`能量不足，${curCard.name} 撤退需支付 ${cost} 點能量`);return}
-   currentBattle.energy-=cost;
-   const c=cardById(id),oldActive=currentBattle.active;
-   const dmgTaken=currentBattle.playerMaxHp-currentBattle.playerHp;
-   currentBattle.bench=currentBattle.bench.filter(x=>x!==id);
-   currentBattle.bench.push(oldActive);
-   currentBattle.active=id;
-   currentBattle.playerMaxHp=c.hp;
-   currentBattle.playerHp=Math.max(1,c.hp-Math.min(dmgTaken,c.hp-1));
-   $("#playerName").textContent=c.name;$("#playerEmoji").innerHTML=artInner(c);
-   $("#battleEnergyCount").textContent=(ELEMENT_ICON[c.el]||"⚡")+currentBattle.energy;
-   battleLog(`🔄 支付 ${cost} 點能量作為撤退費用，將主戰萌獸換成 ${c.name}。`);
-   toast(`已換位（能量 −${cost}）`);
-   initBattle();
- }else toast(currentBattle&&currentBattle.mustSwitch?"你的主戰卡已昏倒，請點選備戰區的卡牌頂替上場":"點擊備戰區卡牌即可換位（需支付主戰卡專屬的撤退費用）");
-}
-function zoomBattleCard(side){
- const id=side==="player"?(currentBattle?currentBattle.active:(state.deck[0]||1)):(currentBattle?currentBattle.enemyActive:3);
- openViewer(id);
-}
-function dailyReward(){if(state.claimed){toast("今日獎勵已領取");return}state.coin+=100;state.claimed=true;save();updateStats();toast("獲得 100 金幣！")}
-function buyPack(cost,type,currency='coin'){
- if(currency==='gem'){
-   if(state.gem<cost){toast("晶石不足");return}
-   state.gem-=cost;
- }else{
-   if(state.coin<cost){toast("金幣不足");return}
-   state.coin-=cost;
- }
- save();updateStats();
- openRandomPack(type);
-}
-function buyPremium(){if(state.gem<80){toast("晶石不足");return}state.gem-=80;save();updateStats();openRandomPack("閃耀精選",true)}
-function openRandomPack(type,premium=false){
- const boostMap={"森林秘境":["草","水"],"烈焰試煉":["火","雷"]};
- const boost=boostMap[type]||[];
- let pool=[];
- DB.forEach(c=>{
-   let weight=1;
-   if(boost.includes(c.el))weight+=2;
-   if(premium&&c.rarity>=3)weight+=2;
-   for(let i=0;i<weight;i++)pool.push(c);
- });
- let drawn=[],hasRare=false;
- for(let i=0;i<5;i++){
-   const c=pool[Math.floor(Math.random()*pool.length)];
-   const wasNew=c.qty===0;
-   c.qty++;
-   drawn.push({id:c.id,wasNew});
-   if(c.rarity>=3)hasRare=true;
- }
- if(premium&&!hasRare){
-   const rarePool=DB.filter(c=>c.rarity>=3);
-   const c=rarePool[Math.floor(Math.random()*rarePool.length)];
-   const wasNew=c.qty===0;
-   c.qty++;
-   drawn.push({id:c.id,wasNew,pity:true});
- }
- state.quest.open++;save();renderHome();renderCollection();
- startPackOpening(type,drawn);
-}
-let packQueue=[],packIndex=0,packRevealed=false,packTypeName="";
-let packTearProgressVal=0,packTearActive=false,packTearStartX=0,packTearDone=false;
-const PACK_THEME={"森林秘境":{art:"🌲📦",spr:null,c1:"#8fc27a",c2:"#3f7a3f"},"烈焰試煉":{art:"🔥📦",spr:null,c1:"#f2a267",c2:"#c1522a"},"閃耀精選":{art:"✨📦",spr:null,c1:"#caa3f0",c2:"#7a45c9"}};
-function startPackOpening(type,drawn){
- packQueue=drawn;packIndex=0;packRevealed=false;packTypeName=type;packTearDone=false;packTearActive=false;
- const theme=PACK_THEME[type]||{art:"🎁📦",spr:null,c1:"#8fc27a",c2:"#3f7a3f"};
- $("#packModalTitle").textContent=type+" 補充包";
- $("#packCoverTitle").textContent=type;
- $("#packCoverArt").innerHTML=theme.spr?packSpriteInner(theme.spr,theme.art):theme.art;
- $("#packTearIcon").innerHTML=theme.spr?packSpriteInner(theme.spr,theme.art):theme.art;$("#packTearLabel").textContent=type;
- $("#packFoilBase").style.setProperty("--pf1",theme.c1);$("#packFoilBase").style.setProperty("--pf2",theme.c2);
- $("#packFoilTop").style.setProperty("--pf1",theme.c1);$("#packFoilTop").style.setProperty("--pf2",theme.c2);
- $("#packFoilTop").style.transition="none";
- setTearProgress(0);
- $("#packChooseRow").innerHTML=[-8,0,8].map((deg,i)=>`<div class="pack-choice" style="transform:rotate(${deg}deg);background:linear-gradient(150deg,${theme.c1},${theme.c2})" onclick="chooseTearPack(${i})">${theme.spr?packSpriteInner(theme.spr,theme.art):theme.art}</div>`).join("");
- $("#packStageChoose").style.display="";
- $("#packStageTear").style.display="none";
- $("#packStageCard").style.display="none";
- $("#packStageSummary").style.display="none";
- $("#packModal").classList.add("show");
-}
-function chooseTearPack(i){
- $("#packStageChoose").style.display="none";
- $("#packStageTear").style.display="";
- if(navigator.vibrate)navigator.vibrate(15);
-}
-function setTearProgress(p){
- packTearProgressVal=p;
- const top=$("#packFoilTop");
- top.style.transform=`translateY(${(-p*60)}%) rotate(${(-p*16)}deg)`;
- top.style.opacity=String(1-p*0.85);
- $("#packTearTab").style.transform=`translateX(${(-p*40)}px)`;
-}
-function packTearStart(e){
- if(packTearDone)return;
- packTearActive=true;
- $("#packFoilTop").style.transition="none";
- packTearStartX=(e.touches?e.touches[0].clientX:e.clientX);
-}
-function packTearMove(e){
- if(!packTearActive||packTearDone)return;
- const x=(e.touches?e.touches[0].clientX:e.clientX);
- const dx=Math.max(0,packTearStartX-x);
- const zoneW=($("#packTearZone")&&$("#packTearZone").offsetWidth)||220;
- setTearProgress(Math.min(1,dx/(zoneW*0.6)));
- if(packTearProgressVal>=1)finishTear();
-}
-function packTearEnd(){
- if(!packTearActive||packTearDone)return;
- packTearActive=false;
- if(packTearProgressVal>=0.98){finishTear();return}
- $("#packFoilTop").style.transition="transform .25s,opacity .25s";
- setTearProgress(0);
-}
-function finishTear(){
- if(packTearDone)return;
- packTearDone=true;packTearActive=false;
- const top=$("#packFoilTop");
- top.style.transition="transform .45s cubic-bezier(.2,.8,.3,1),opacity .4s";
- top.style.transform="translateY(-140%) rotate(-30deg)";
- top.style.opacity="0";
- if(navigator.vibrate)navigator.vibrate([20,30,50]);
- setTimeout(()=>{
-   $("#packStageTear").style.display="none";
-   $("#packStageCard").style.display="";
-   renderPackCard();
- },420);
-}
-function renderPackCard(){
- if(packIndex>=packQueue.length){renderPackSummary();return}
- const d=packQueue[packIndex],c=cardById(d.id);
- packRevealed=false;
- $("#packCardStage").classList.remove("revealed");
- $("#packCardEmoji").innerHTML=artInner(c);
- $("#packCardName").textContent=c.name;
- $("#packCardMeta").textContent=c.el+" 屬性 · HP "+c.hp+" · "+rarityName(c.rarity);
- $("#packCardBadge").innerHTML=(d.wasNew?'<span class="pack-badge new">NEW</span>':'')+(c.rarity>=3?'<span class="pack-badge rare">稀有</span>':'')+(d.pity?'<span class="pack-badge pity">保底</span>':'');
- $("#packCounter").textContent=(packIndex+1)+" / "+packQueue.length;
- $("#packNextBtn").textContent=packIndex===packQueue.length-1?"查看戰利品":"下一張";
-}
-function packFlip(){
- if(packRevealed)return;
- packRevealed=true;
- $("#packCardStage").classList.add("revealed");
- if(navigator.vibrate)navigator.vibrate(30);
-}
-function packNext(){
- if(!packRevealed){packFlip();return}
- packIndex++;
- renderPackCard();
-}
-function renderPackSummary(){
- $("#packStageCard").style.display="none";
- $("#packStageSummary").style.display="";
- $("#packSummaryTitle").textContent=packTypeName+"：共獲得 "+packQueue.length+" 張卡";
- $("#packSummaryGrid").innerHTML=packQueue.map(d=>{const c=cardById(d.id);return `<div class="pack-summary-card" onclick="openViewer(${c.id})">${d.wasNew?'<span class="pack-badge new">NEW</span>':''}<div class="emoji">${artInner(c)}</div><div class="nm">${c.name}</div><div class="rr">${rarityName(c.rarity)}</div></div>`}).join("");
-}
-function closePackModal(){
- $("#packModal").classList.remove("show");
- toast(packTypeName+"：已收入收藏冊");
- justAddedIds=new Set(packQueue.map(d=>d.id));
- justNewIds=new Set(packQueue.filter(d=>d.wasNew).map(d=>d.id));
- collectionMode="creature";
- go("collection");
- $("#tabCreature").classList.add("active");
- $("#tabTrainer").classList.remove("active");
- setTimeout(()=>{justAddedIds=new Set();justNewIds=new Set()},2200);
-}
-function renderQuests(){
- const q=state.quest;
- $("#quests").innerHTML=[
-  ["⚔️","完成 3 場對戰",Math.min(q.battle,3),3,"100 金"],
-  ["🎁","開啟 2 個補充包",Math.min(q.open,2),2,"20 晶"]
- ].map(x=>`<div class="quest"><div class="qicon">${x[0]}</div><div class="qbody"><b>${x[1]}</b><small>${x[2]} / ${x[3]}</small></div><span class="reward">${x[4]}</span></div>`).join("");
-}
-// 匯出 JSON 存檔
-function exportSave() {
-  try {
-    // 確保最新資料已更新至 state
-    state.cardQty = Object.fromEntries(DB.map(c => [c.id, c.qty]));
-    state.trainerQty = Object.fromEntries(TRAINERS.map(t => [t.id, t.qty]));
+    // ======================= 全域資料 =======================
+    let currentTheme = "xp";
+    let currentGitHubUsername = "kaojarher";
+    let repoConfig = { projects: [], githubUsername: "kaojarher", userModified: false };
+    let desktopShortcuts = [];
+    let nextShortcutId = 100;
+    let wallpaperType = "image"; // "image" or "color"
+    let wallpaperValue = null;    // 圖片URL 或 顏色值
+    let editingShortcutId = null;
+    let dragSrcIndex = null;
+    // 群組資料：[{ id, name, emoji, memberIds: [shortcutId,...] }]
+    let desktopGroups = [];
+    let nextGroupId = 1;
+    let editingGroupId = null;
     
-    const dataStr = JSON.stringify(state, null, 2);
-    const blob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
+    // 預設捷徑 (保留相容，但實際由 BUNDLED_CONFIG 提供)
+    const defaultShortcuts = BUNDLED_CONFIG.shortcuts;
     
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "moeCardSave.json";
-    document.body.appendChild(a);
-    a.click();
+    // ======================= 儲存與載入 =======================
+    function saveAllSettings() {
+        const fullData = {
+            theme: currentTheme,
+            wallpaperType, wallpaperValue,
+            github: { username: currentGitHubUsername, repoConfig },
+            shortcuts: desktopShortcuts,
+            nextId: nextShortcutId,
+            groups: desktopGroups,
+            nextGroupId: nextGroupId
+        };
+        localStorage.setItem('dashboard_full_config_v2', JSON.stringify(fullData));
+    }
     
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    toast("存檔已順利匯出為 JSON 檔！");
-  } catch (e) {
-    toast("匯出存檔失敗");
-  }
-}
-
-// 匯入 JSON 存檔
-function importSave() {
-  const fileInput = document.createElement("input");
-  fileInput.type = "file";
-  fileInput.accept = ".json,application/json";
-  
-  fileInput.onchange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const importedState = JSON.parse(event.target.result);
-        
-        // 驗證基本的存檔欄位結構
-        if (importedState && typeof importedState === "object") {
-          state = importedState;
-          
-          // 更新記憶體中的卡牌數量資料
-          if (state.cardQty) DB.forEach(c => { if (state.cardQty[c.id] != null) c.qty = state.cardQty[c.id]; });
-          if (state.trainerQty) TRAINERS.forEach(t => { if (state.trainerQty[t.id] != null) t.qty = state.trainerQty[t.id]; });
-          
-          // 寫入本機快取並刷新 UI
-          save();
-          updateStats();
-          renderHome();
-          toast("存檔匯入成功！");
+    function loadAllSettings() {
+        const saved = localStorage.getItem('dashboard_full_config_v2');
+        if (!saved) return;
+        try {
+            const data = JSON.parse(saved);
+            if (data.theme) setTheme(data.theme, false);
+            if (data.wallpaperType && data.wallpaperValue !== undefined) {
+                wallpaperType = data.wallpaperType;
+                wallpaperValue = data.wallpaperValue;
+                applyWallpaperFromState();
+            }
+            if (data.github) {
+                currentGitHubUsername = data.github.username;
+                repoConfig = data.github.repoConfig || { projects: [], githubUsername: currentGitHubUsername, userModified: false };
+                if (!repoConfig.projects) repoConfig.projects = [];
+                renderRepos();
+                updateAccountDisplay();
+            }
+            if (data.shortcuts && Array.isArray(data.shortcuts)) {
+                desktopShortcuts = data.shortcuts;
+                renderDesktopIcons();
+                renderShortcutManager();
+                renderQuickLaunch();
+            }
+            if (data.nextId) nextShortcutId = data.nextId;
+            if (data.groups && Array.isArray(data.groups)) {
+                desktopGroups = data.groups;
+                renderGroupManager();
+            }
+            if (data.nextGroupId) nextGroupId = data.nextGroupId;
+        } catch(e) { console.warn(e); }
+    }
+    
+    // 桌布套用
+    function applyWallpaperFromState() {
+        if (wallpaperType === "color" && wallpaperValue) {
+            document.body.style.backgroundImage = "none";
+            document.body.style.backgroundColor = wallpaperValue;
+        } else if (wallpaperType === "image" && wallpaperValue) {
+            document.body.style.backgroundColor = "";
+            document.body.style.backgroundImage = `url('${wallpaperValue}')`;
+            document.body.style.backgroundSize = "cover";
+            document.body.style.backgroundPosition = "center";
         } else {
-          toast("匯入失敗：存檔格式不正確");
+            // 預設主題桌布
+            setDefaultThemeWallpaper();
         }
-      } catch (err) {
-        toast("匯入失敗：無效的 JSON 檔案");
-      }
-    };
-    reader.readAsText(file);
-  };
-  
-  fileInput.click();
-}
-function resetGame(){
- if(!confirm("確定要清除本機資料重置遊戲？"))return;
- localStorage.removeItem("moeCardSave");
- location.reload();
-}
+    }
+    function setDefaultThemeWallpaper() {
+        document.body.style.backgroundColor = "";
+        if (currentTheme === "xp") {
+            document.body.style.backgroundImage = "url('https://wallpapercave.com/wp/wp1851030.jpg')";
+        } else {
+            document.body.style.backgroundImage = "url('https://images.pexels.com/photos/268533/pexels-photo-268533.jpeg?auto=compress&cs=tinysrgb&w=1600')";
+        }
+        document.body.style.backgroundSize = "cover";
+    }
+    function setSolidColor(color) {
+        wallpaperType = "color";
+        wallpaperValue = color;
+        document.body.style.backgroundImage = "none";
+        document.body.style.backgroundColor = color;
+        saveAllSettings();
+        document.getElementById('colorPreview').style.backgroundColor = color;
+    }
+    function setImageWallpaper(url) {
+        wallpaperType = "image";
+        wallpaperValue = url;
+        document.body.style.backgroundColor = "";
+        document.body.style.backgroundImage = `url('${url}')`;
+        document.body.style.backgroundSize = "cover";
+        document.body.style.backgroundPosition = "center";
+        saveAllSettings();
+    }
+    function resetWallpaper() {
+        wallpaperType = "image";
+        wallpaperValue = null;
+        setDefaultThemeWallpaper();
+        saveAllSettings();
+    }
+    
+    function setTheme(theme, save = true) {
+        currentTheme = theme;
+        document.body.classList.remove("xp-theme", "mac-theme");
+        document.body.classList.add(theme === "xp" ? "xp-theme" : "mac-theme");
+        if (!wallpaperValue || wallpaperType === "image" && !wallpaperValue) setDefaultThemeWallpaper();
+        if (save) saveAllSettings();
+    }
+    
+    // ======================= 捷徑渲染 =======================
+    function getGroupedShortcutIds() {
+        const ids = new Set();
+        desktopGroups.forEach(g => g.memberIds.forEach(id => ids.add(id)));
+        return ids;
+    }
 
-window.addEventListener("DOMContentLoaded",()=>{
- renderHome();
- updateStats();
-});
+    function renderDesktopIcons() {
+        const container = document.getElementById('iconsContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        const groupedIds = getGroupedShortcutIds();
+
+        // 先渲染群組圖示
+        desktopGroups.forEach(group => {
+            const members = group.memberIds.map(id => desktopShortcuts.find(s => s.id === id)).filter(Boolean);
+            if (!members.length) return;
+            const groupDiv = document.createElement('div');
+            groupDiv.className = 'icon-group';
+            const previews = members.slice(0, 4).map(s => {
+                if (s.iconType === 'emoji') return `<div class="group-preview-icon" style="font-size:13px;">${s.icon}</div>`;
+                return `<div class="group-preview-icon"><img src="${s.icon}" onerror="this.style.display='none'"></div>`;
+            }).join('');
+            // 補足4格
+            let extra = '';
+            for (let i = members.length; i < 4; i++) extra += `<div class="group-preview-icon"></div>`;
+            groupDiv.innerHTML = `<div class="group-folder">${previews}${extra}</div><span>${escapeHtml(group.name)}</span>`;
+            groupDiv.addEventListener('click', (e) => { e.stopPropagation(); openGroupPopup(group, groupDiv); });
+            container.appendChild(groupDiv);
+        });
+
+        // 再渲染未歸組的捷徑
+        desktopShortcuts.forEach((shortcut, idx) => {
+            if (groupedIds.has(shortcut.id)) return;
+            const iconDiv = document.createElement('div');
+            iconDiv.className = 'icon';
+            iconDiv.setAttribute('draggable', 'true');
+            iconDiv.setAttribute('data-index', idx);
+            let innerIcon = '';
+            if (shortcut.iconType === 'emoji') {
+                innerIcon = `<div class="icon-img" style="font-size:52px; line-height:1;">${shortcut.icon || '📄'}</div>`;
+            } else {
+                innerIcon = `<div class="icon-img"><img src="${shortcut.icon}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1828/1828884.png'"></div>`;
+            }
+            iconDiv.innerHTML = innerIcon + `<span>${escapeHtml(shortcut.name)}</span>`;
+            iconDiv.addEventListener('click', (e) => { e.stopPropagation(); executeAction(shortcut); });
+            iconDiv.addEventListener('dragstart', handleDragStart);
+            iconDiv.addEventListener('dragover', handleDragOver);
+            iconDiv.addEventListener('drop', handleDrop);
+            iconDiv.addEventListener('dragend', handleDragEnd);
+            container.appendChild(iconDiv);
+        });
+    }
+
+    // ===== 群組彈窗 =====
+    function openGroupPopup(group, anchorEl) {
+        const popup = document.getElementById('groupPopup');
+        const overlay = document.getElementById('groupPopupOverlay');
+        const grid = document.getElementById('groupPopupGrid');
+        const titleEl = document.getElementById('groupPopupTitle');
+        titleEl.textContent = (group.emoji || '📂') + ' ' + group.name;
+        grid.innerHTML = '';
+        const members = group.memberIds.map(id => desktopShortcuts.find(s => s.id === id)).filter(Boolean);
+        members.forEach(s => {
+            const item = document.createElement('div');
+            item.className = 'popup-item';
+            let iconHtml = '';
+            if (s.iconType === 'emoji') {
+                iconHtml = `<div class="popup-icon">${s.icon}</div>`;
+            } else {
+                iconHtml = `<img src="${s.icon}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1828/1828884.png'">`;
+            }
+            item.innerHTML = iconHtml + `<span>${escapeHtml(s.name)}</span>`;
+            item.addEventListener('click', () => { executeAction(s); closeGroupPopup(); });
+            grid.appendChild(item);
+        });
+        overlay.style.display = 'block';
+        popup.style.display = 'block';
+        const rect = anchorEl.getBoundingClientRect();
+        const pw = Math.max(popup.offsetWidth, 240);
+        const ph = Math.max(popup.offsetHeight, 160);
+        let left = rect.left + rect.width / 2 - pw / 2;
+        let top = rect.top - ph - 12;
+        if (top < 10) top = rect.bottom + 10;
+        if (left < 10) left = 10;
+        if (left + pw > window.innerWidth - 10) left = window.innerWidth - pw - 10;
+        popup.style.left = left + 'px';
+        popup.style.top = top + 'px';
+    }
+    function closeGroupPopup() {
+        document.getElementById('groupPopup').style.display = 'none';
+        document.getElementById('groupPopupOverlay').style.display = 'none';
+    }
+
+    // ===== 群組管理 UI =====
+    function renderGroupManager() {
+        const container = document.getElementById('groupListContainer');
+        if (!container) return;
+        if (!desktopGroups.length) { container.innerHTML = "<div style='padding:8px;'>尚無群組，點擊新增</div>"; return; }
+        container.innerHTML = desktopGroups.map(g => {
+            const count = g.memberIds.length;
+            return `<div class="group-row">
+                <span style="font-size:20px;">${g.emoji || '📂'}</span>
+                <span>${escapeHtml(g.name)} <small style="color:#888;">(${count} 個捷徑)</small></span>
+                <div>
+                    <button class="edit-group" data-gid="${g.id}">✏️</button>
+                    <button class="del-group" data-gid="${g.id}">🗑️</button>
+                </div>
+            </div>`;
+        }).join('');
+        document.querySelectorAll('.edit-group').forEach(btn => btn.addEventListener('click', () => openGroupDialog(parseInt(btn.getAttribute('data-gid')))));
+        document.querySelectorAll('.del-group').forEach(btn => btn.addEventListener('click', () => deleteGroupById(parseInt(btn.getAttribute('data-gid')))));
+    }
+
+    function openGroupDialog(gid = null) {
+        editingGroupId = gid;
+        document.getElementById('groupDialogTitle').innerText = gid === null ? '📂 建立群組' : '✏️ 編輯群組';
+        let currentMembers = [];
+        if (gid !== null) {
+            const g = desktopGroups.find(g => g.id === gid);
+            if (g) {
+                document.getElementById('editGroupName').value = g.name;
+                document.getElementById('editGroupEmoji').value = g.emoji || '📂';
+                currentMembers = g.memberIds;
+            }
+        } else {
+            document.getElementById('editGroupName').value = '';
+            document.getElementById('editGroupEmoji').value = '📂';
+        }
+        // 渲染成員勾選框
+        const box = document.getElementById('groupMemberCheckboxes');
+        box.innerHTML = desktopShortcuts.map(s => {
+            const checked = currentMembers.includes(s.id) ? 'checked' : '';
+            const icon = s.iconType === 'emoji' ? s.icon : '🖼️';
+            return `<label style="display:flex;align-items:center;gap:8px;padding:4px;cursor:pointer;">
+                <input type="checkbox" class="group-member-cb" value="${s.id}" ${checked}>
+                <span style="font-size:18px;">${icon}</span> ${escapeHtml(s.name)}
+            </label>`;
+        }).join('');
+        openWindow('groupDialog');
+    }
+
+    function saveGroupFromDialog() {
+        const name = document.getElementById('editGroupName').value.trim();
+        const emoji = document.getElementById('editGroupEmoji').value.trim() || '📂';
+        if (!name) { alert('請填寫群組名稱'); return; }
+        const memberIds = [...document.querySelectorAll('.group-member-cb:checked')].map(cb => parseInt(cb.value));
+        if (!memberIds.length) { alert('請至少選擇一個捷徑'); return; }
+        if (editingGroupId === null) {
+            desktopGroups.push({ id: nextGroupId++, name, emoji, memberIds });
+        } else {
+            const idx = desktopGroups.findIndex(g => g.id === editingGroupId);
+            if (idx !== -1) desktopGroups[idx] = { ...desktopGroups[idx], name, emoji, memberIds };
+        }
+        closeWindow('groupDialog');
+        renderDesktopIcons(); renderGroupManager(); saveAllSettings();
+    }
+
+    function deleteGroupById(gid) {
+        if (confirm('刪除此群組？（捷徑本身不會刪除）')) {
+            desktopGroups = desktopGroups.filter(g => g.id !== gid);
+            renderDesktopIcons(); renderGroupManager(); saveAllSettings();
+        }
+    }
+
+    
+    function renderShortcutManager() {
+        const container = document.getElementById('shortcutListContainer');
+        if (!container) return;
+        if (!desktopShortcuts.length) { container.innerHTML = "<div style='padding:8px;'>尚無捷徑，點擊新增</div>"; return; }
+        container.innerHTML = desktopShortcuts.map(short => `
+            <div class="shortcut-row">
+                <span>${short.iconType === 'emoji' ? `<span style="font-size:24px;">${short.icon}</span>` : `<img src="${short.icon}" width="24">`} ${escapeHtml(short.name)}</span>
+                <div>
+                    <label style="font-size:12px;"><input type="checkbox" class="pin-checkbox" data-id="${short.id}" ${short.pinToTaskbar ? 'checked' : ''}> 工作列</label>
+                    <button class="edit-shortcut" data-id="${short.id}">✏️</button>
+                    <button class="del-shortcut" data-id="${short.id}">🗑️</button>
+                </div>
+            </div>
+        `).join('');
+        document.querySelectorAll('.edit-shortcut').forEach(btn => btn.addEventListener('click', (e) => openEditDialog(parseInt(btn.getAttribute('data-id')))));
+        document.querySelectorAll('.del-shortcut').forEach(btn => btn.addEventListener('click', (e) => deleteShortcutById(parseInt(btn.getAttribute('data-id')))));
+        document.querySelectorAll('.pin-checkbox').forEach(cb => cb.addEventListener('change', (e) => {
+            const id = parseInt(cb.getAttribute('data-id'));
+            const s = desktopShortcuts.find(s => s.id === id);
+            if (s) { s.pinToTaskbar = cb.checked; saveAllSettings(); renderQuickLaunch(); }
+        }));
+    }
+    
+    function renderQuickLaunch() {
+        const area = document.getElementById('quickLaunchArea');
+        if (!area) return;
+        area.innerHTML = '';
+        desktopShortcuts.filter(s => s.pinToTaskbar).forEach(short => {
+            const div = document.createElement('div');
+            div.className = 'quick-launch-item';
+            div.title = short.name;
+            if (short.iconType === 'emoji') {
+                div.innerHTML = `<span class="emoji-icon" style="font-size:24px;">${short.icon}</span>`;
+            } else {
+                div.innerHTML = `<img src="${short.icon}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1828/1828884.png'">`;
+            }
+            div.addEventListener('click', () => executeAction(short));
+            area.appendChild(div);
+        });
+    }
+    
+    function executeAction(shortcut) {
+        if (shortcut.actionType === "url") window.open(shortcut.actionValue, '_blank');
+        else if (shortcut.actionType === "function") { try { eval(shortcut.actionValue); } catch(e) { alert("執行錯誤"); } }
+    }
+    
+    function openEditDialog(id = null) {
+        editingShortcutId = id;
+        document.getElementById('dialogTitle').innerText = id === null ? "➕ 新增捷徑" : "✏️ 編輯捷徑";
+        const dialog = document.getElementById('shortcutDialog');
+        if (id !== null) {
+            const target = desktopShortcuts.find(s => s.id === id);
+            if (target) {
+                document.getElementById('editShortcutName').value = target.name;
+                document.getElementById('iconTypeSelect').value = target.iconType;
+                toggleIconFields(target.iconType);
+                if (target.iconType === 'emoji') {
+                    // 將現有 emoji 放入自訂欄位
+                    document.getElementById('customEmojiInput').value = target.icon;
+                } else {
+                    document.getElementById('editShortcutIconUrl').value = target.icon;
+                }
+                document.getElementById('editShortcutActionType').value = target.actionType;
+                document.getElementById('editShortcutTarget').value = target.actionValue;
+                document.getElementById('editShortcutPinTaskbar').checked = target.pinToTaskbar === true;
+            }
+        } else {
+            document.getElementById('editShortcutName').value = "";
+            document.getElementById('iconTypeSelect').value = "emoji";
+            toggleIconFields("emoji");
+            document.getElementById('customEmojiInput').value = "📁";
+            document.getElementById('editShortcutIconUrl').value = "";
+            document.getElementById('editShortcutActionType').value = "url";
+            document.getElementById('editShortcutTarget').value = "";
+            document.getElementById('editShortcutPinTaskbar').checked = false;
+        }
+        openWindow('shortcutDialog');
+    }
+    
+    function toggleIconFields(type) {
+        const emojiSec = document.getElementById('emojiSection');
+        const urlSec = document.getElementById('urlSection');
+        if (type === 'emoji') { emojiSec.style.display = 'block'; urlSec.style.display = 'none'; }
+        else { emojiSec.style.display = 'none'; urlSec.style.display = 'block'; }
+    }
+    
+    function saveShortcutFromDialog() {
+        const name = document.getElementById('editShortcutName').value.trim();
+        const iconType = document.getElementById('iconTypeSelect').value;
+        let iconValue = "";
+        if (iconType === 'emoji') {
+            let customEmoji = document.getElementById('customEmojiInput').value.trim();
+            if (customEmoji && customEmoji.length > 0) iconValue = customEmoji;
+            else iconValue = "📄";
+        } else {
+            iconValue = document.getElementById('editShortcutIconUrl').value.trim();
+            if (!iconValue) iconValue = "https://cdn-icons-png.flaticon.com/512/1828/1828884.png";
+        }
+        const actionType = document.getElementById('editShortcutActionType').value;
+        const target = document.getElementById('editShortcutTarget').value.trim();
+        const pin = document.getElementById('editShortcutPinTaskbar').checked;
+        if (!name || !target) { alert("請填寫名稱與目標"); return; }
+        if (editingShortcutId === null) {
+            desktopShortcuts.push({ id: nextShortcutId++, name, iconType, icon: iconValue, actionType, actionValue: target, pinToTaskbar: pin });
+        } else {
+            const idx = desktopShortcuts.findIndex(s => s.id === editingShortcutId);
+            if (idx !== -1) {
+                desktopShortcuts[idx] = { ...desktopShortcuts[idx], name, iconType, icon: iconValue, actionType, actionValue: target, pinToTaskbar: pin };
+            }
+        }
+        closeWindow('shortcutDialog');
+        renderDesktopIcons();
+        renderShortcutManager();
+        renderQuickLaunch();
+        renderGroupManager();
+        saveAllSettings();
+    }
+    
+    function deleteShortcutById(id) {
+        if (confirm("刪除此捷徑？")) {
+            desktopShortcuts = desktopShortcuts.filter(s => s.id !== id);
+            // 同時從所有群組中移除
+            desktopGroups.forEach(g => { g.memberIds = g.memberIds.filter(mid => mid !== id); });
+            renderDesktopIcons(); renderShortcutManager(); renderQuickLaunch(); renderGroupManager(); saveAllSettings();
+        }
+    }
+    
+    // 拖拽排序
+    function handleDragStart(e) {
+        const target = e.target.closest('.icon');
+        if (!target) return;
+        dragSrcIndex = parseInt(target.getAttribute('data-index'));
+        e.dataTransfer.effectAllowed = 'move';
+        target.classList.add('dragging');
+    }
+    function handleDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
+    function handleDrop(e) {
+        e.preventDefault();
+        const targetIcon = e.target.closest('.icon');
+        if (!targetIcon) return;
+        const destIndex = parseInt(targetIcon.getAttribute('data-index'));
+        if (dragSrcIndex !== null && dragSrcIndex !== destIndex) {
+            const moved = desktopShortcuts[dragSrcIndex];
+            desktopShortcuts.splice(dragSrcIndex, 1);
+            desktopShortcuts.splice(destIndex, 0, moved);
+            renderDesktopIcons(); renderShortcutManager(); renderQuickLaunch(); renderGroupManager(); saveAllSettings();
+        }
+    }
+    function handleDragEnd(e) { if(e.target.closest('.icon')) e.target.closest('.icon').classList.remove('dragging'); dragSrcIndex = null; }
+    
+    // GitHub 功能
+    async function fetchGitHubRepos(username) {
+        const url = `https://api.github.com/users/${encodeURIComponent(username)}/repos?per_page=100&sort=updated`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`無法取得 ${username}`);
+        const repos = await res.json();
+        return repos.map(r => r.name);
+    }
+    async function syncFromGitHub() {
+        try {
+            const list = await fetchGitHubRepos(currentGitHubUsername);
+            repoConfig.projects = list;
+            saveAllSettings();
+            renderRepos();
+            showStatus("✅ 同步完成");
+        } catch(e) { showStatus("❌ 同步失敗: " + e.message); }
+    }
+    function renderRepos() {
+        const container = document.getElementById('repo-list-content');
+        if (!container) return;
+        const projects = repoConfig.projects || [];
+        if (!projects.length) { container.innerHTML = '<div>尚無倉庫，請同步</div>'; return; }
+        const baseUrl = `https://${currentGitHubUsername}.github.io/`;
+        container.innerHTML = projects.map(repo => `<a href="${baseUrl}${repo}/" target="_blank" class="repo-item"><img src="https://cdn-icons-png.flaticon.com/512/25/25231.png" width="30"><br>${escapeHtml(repo)}</a>`).join('');
+    }
+    function updateAccountDisplay() { document.getElementById('currentAccountDisplay').innerText = `👤 帳號: ${currentGitHubUsername}`; }
+    async function switchGitHubAccount(username) { currentGitHubUsername = username; await syncFromGitHub(); updateAccountDisplay(); saveAllSettings(); }
+    
+    // 開始選單
+    function buildStartMenu() {
+        const menu = document.getElementById('startMenu');
+        menu.innerHTML = `<div class="start-menu-item" onclick="openWindow('repo-window'); closeStartMenu();"><span>📁</span> GitHub 倉庫</div>
+                          <div class="start-menu-item" onclick="openWindow('settings-window'); closeStartMenu();"><span>⚙️</span> 系統設定</div><hr>`;
+        const groupedIds = getGroupedShortcutIds();
+
+        // 渲染群組（可折疊）
+        desktopGroups.forEach(group => {
+            const members = group.memberIds.map(id => desktopShortcuts.find(s => s.id === id)).filter(Boolean);
+            if (!members.length) return;
+            const gid = 'smg-' + group.id;
+            const groupItem = document.createElement('div');
+            groupItem.className = 'start-group-item';
+            groupItem.innerHTML = `
+                <div class="start-group-header" onclick="toggleStartGroup('${gid}')">
+                    <span style="font-size:18px;">${group.emoji || '📂'}</span>
+                    <span>${escapeHtml(group.name)}</span>
+                    <span class="start-group-arrow" id="arrow-${gid}">▶</span>
+                </div>
+                <div class="start-group-children" id="${gid}">
+                    ${members.map(s => `
+                        <div class="start-menu-item" onclick="executeStartMenuShortcut(${s.id})">
+                            <span style="font-size:18px;">${s.iconType === 'emoji' ? s.icon : '🖼️'}</span> ${escapeHtml(s.name)}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            menu.appendChild(groupItem);
+        });
+
+        // 渲染未歸組捷徑
+        desktopShortcuts.filter(s => !groupedIds.has(s.id)).forEach(short => {
+            const div = document.createElement('div');
+            div.className = 'start-menu-item';
+            div.innerHTML = `<span style="font-size:20px;">${short.iconType === 'emoji' ? short.icon : '🖼️'}</span> ${escapeHtml(short.name)}`;
+            div.onclick = () => { executeAction(short); closeStartMenu(); };
+            menu.appendChild(div);
+        });
+    }
+    function toggleStartGroup(gid) {
+        const children = document.getElementById(gid);
+        const arrow = document.getElementById('arrow-' + gid);
+        if (!children) return;
+        const isOpen = children.classList.toggle('open');
+        if (arrow) arrow.classList.toggle('open', isOpen);
+    }
+    function executeStartMenuShortcut(id) {
+        const s = desktopShortcuts.find(s => s.id === id);
+        if (s) { executeAction(s); closeStartMenu(); }
+    }
+    function toggleStartMenu() { const m = document.getElementById('startMenu'); if (m.style.display === 'block') m.style.display = 'none'; else { buildStartMenu(); m.style.display = 'block'; } }
+    function closeStartMenu() { document.getElementById('startMenu').style.display = 'none'; }
+    
+    // 匯入匯出
+    function exportFullConfig() {
+        const data = {
+            theme: currentTheme,
+            wallpaperType, wallpaperValue,
+            github: { username: currentGitHubUsername, repoConfig },
+            shortcuts: desktopShortcuts,
+            nextId: nextShortcutId,
+            groups: desktopGroups,
+            nextGroupId: nextGroupId
+        };
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type: "application/json"}));
+        a.download = "dashboard_full.json";
+        a.click();
+    }
+    function importFullConfig() {
+        const file = document.getElementById('importFullFile').files[0];
+        if (!file) return alert("請選擇檔案");
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (data.theme) setTheme(data.theme, false);
+                if (data.wallpaperType && data.wallpaperValue) { wallpaperType = data.wallpaperType; wallpaperValue = data.wallpaperValue; applyWallpaperFromState(); }
+                if (data.github) { currentGitHubUsername = data.github.username; repoConfig = data.github.repoConfig; renderRepos(); updateAccountDisplay(); }
+                if (data.shortcuts) { desktopShortcuts = data.shortcuts; }
+                if (data.nextId) nextShortcutId = data.nextId;
+                if (data.groups && Array.isArray(data.groups)) { desktopGroups = data.groups; } else { desktopGroups = []; }
+                if (data.nextGroupId) nextGroupId = data.nextGroupId;
+                renderDesktopIcons(); renderShortcutManager(); renderQuickLaunch(); renderGroupManager();
+                saveAllSettings();
+                alert("匯入成功"); location.reload();
+            } catch(err) { alert("格式錯誤"); }
+        };
+        reader.readAsText(file);
+    }
+    
+    function showStatus(msg) { const div = document.getElementById('settingStatus'); if(div){ div.innerText=msg; setTimeout(()=> div.innerText='',3000); } }
+    function escapeHtml(str) { return String(str).replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
+    function openWindow(id) { const w = document.getElementById(id); if(w){ w.style.display='flex'; w.style.zIndex=100+Math.random()*100; } }
+    function closeWindow(id) { document.getElementById(id).style.display='none'; }
+    function updateClock() { document.getElementById('clock').innerText = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); }
+    function initDragWindows() { /* 簡易拖曳省略，但保留視窗移動能力 */ document.querySelectorAll('.window-header').forEach(h=>{ const w=h.parentElement; let drag=false,ox,oy; h.addEventListener('mousedown',e=>{ if(e.target.closest('.window-controls')) return; drag=true; const r=w.getBoundingClientRect(); ox=e.clientX-r.left; oy=e.clientY-r.top; w.style.zIndex=1000; e.preventDefault(); }); window.addEventListener('mousemove',e=>{ if(drag){ w.style.left=(e.clientX-ox)+'px'; w.style.top=(e.clientY-oy)+'px'; } }); window.addEventListener('mouseup',()=>drag=false); }); }
+    
+    function bindEvents() {
+        document.getElementById('xpThemeBtn').onclick = () => setTheme("xp");
+        document.getElementById('macThemeBtn').onclick = () => setTheme("mac");
+        document.getElementById('applyWallpaperBtn').onclick = () => { const url = document.getElementById('wallpaperUrl').value.trim(); if(url) setImageWallpaper(url); };
+        document.getElementById('applySolidColorBtn').onclick = () => { const color = document.getElementById('solidColorPicker').value; setSolidColor(color); };
+        document.getElementById('resetWallpaperBtn').onclick = () => resetWallpaper();
+        document.getElementById('applyUsernameBtn').onclick = async () => { const name = document.getElementById('githubUsernameInput').value.trim(); if(name) await switchGitHubAccount(name); };
+        document.getElementById('manualSyncBtn').onclick = () => syncFromGitHub();
+        document.getElementById('newShortcutBtn').onclick = () => openEditDialog(null);
+        document.getElementById('saveShortcutBtn').onclick = () => saveShortcutFromDialog();
+        document.getElementById('newGroupBtn').onclick = () => openGroupDialog(null);
+        document.getElementById('saveGroupBtn').onclick = () => saveGroupFromDialog();
+        document.getElementById('start-btn').onclick = (e) => { e.stopPropagation(); toggleStartMenu(); };
+        document.addEventListener('click', (e) => { if(!e.target.closest('#start-btn') && !e.target.closest('.start-menu')) closeStartMenu(); });
+        document.getElementById('wallpaperUpload').addEventListener('change', (e) => { const file=e.target.files[0]; if(file && file.type.startsWith('image/')){ const reader=new FileReader(); reader.onload=ev=>setImageWallpaper(ev.target.result); reader.readAsDataURL(file); } });
+        document.getElementById('iconTypeSelect').addEventListener('change', (e) => toggleIconFields(e.target.value));
+        // emoji 點擊選取
+        document.querySelectorAll('.emoji-option').forEach(emojiSpan => {
+            emojiSpan.addEventListener('click', () => { document.getElementById('customEmojiInput').value = emojiSpan.innerText; });
+        });
+    }
+    
+    // 內嵌設定版本號，修改 BUNDLED_CONFIG 時請同步更新此值
+    const BUNDLED_VERSION = "v2025-04-21-2";
+
+    function applyConfig(data) {
+        if (data.theme) setTheme(data.theme, false);
+        if (data.wallpaperType) {
+            wallpaperType = data.wallpaperType;
+            wallpaperValue = data.wallpaperValue || null;
+            applyWallpaperFromState();
+        }
+        if (data.github) {
+            currentGitHubUsername = data.github.username;
+            repoConfig = data.github.repoConfig || { projects: [], githubUsername: currentGitHubUsername, userModified: false };
+            if (!repoConfig.projects) repoConfig.projects = [];
+        }
+        if (data.shortcuts && Array.isArray(data.shortcuts)) {
+            desktopShortcuts = data.shortcuts;
+        }
+        if (data.nextId) nextShortcutId = data.nextId;
+        if (data.groups && Array.isArray(data.groups)) {
+            desktopGroups = data.groups;
+        }
+        if (data.nextGroupId) nextGroupId = data.nextGroupId;
+    }
+
+    function init() {
+        const savedVersion = localStorage.getItem('dashboard_bundled_version');
+        const saved = localStorage.getItem('dashboard_full_config_v2');
+
+        if (saved && savedVersion === BUNDLED_VERSION) {
+            // 版本相符，使用 localStorage 的使用者設定
+            try {
+                const data = JSON.parse(saved);
+                applyConfig(data);
+            } catch(e) {
+                applyConfig(BUNDLED_CONFIG);
+            }
+        } else {
+            // 首次開啟，或內嵌設定已更新 → 強制套用 BUNDLED_CONFIG
+            applyConfig(BUNDLED_CONFIG);
+            localStorage.setItem('dashboard_bundled_version', BUNDLED_VERSION);
+            saveAllSettings();
+        }
+
+        if (!desktopShortcuts.length) { desktopShortcuts = defaultShortcuts; nextShortcutId = BUNDLED_CONFIG.nextId || 111; saveAllSettings(); }
+        renderDesktopIcons(); renderShortcutManager(); renderQuickLaunch(); renderGroupManager();
+        bindEvents(); initDragWindows(); updateClock(); setInterval(updateClock, 1000);
+        if (!repoConfig.projects.length) syncFromGitHub().catch(()=>{});
+        else renderRepos();
+        updateAccountDisplay();
+        document.getElementById('githubUsernameInput').value = currentGitHubUsername;
+        document.getElementById('solidColorPicker').value = "#3a6ea5";
+        window.showAbout = () => alert("Mydesktop應用桌面V0\n2026年4月撰寫的一個簡單的桌面應用，可以在手機/平板與電腦使用\n如有需要也歡迎下載變更成個人設定，請加註引用來源即可");
+    }
+    init();
 </script>
-</div>
-</body>
-</html>
+
+
+</body></html>
