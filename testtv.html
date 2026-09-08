@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Famelack 全球電視 + 即時繁體中文字幕</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        header {
+            background-color: #1f1f1f;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+        }
+        h1 {
+            font-size: 1.1rem;
+            color: #00adb5;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        button {
+            background-color: #00adb5;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        button:hover {
+            background-color: #008c93;
+        }
+        button.active {
+            background-color: #ff4b5c;
+        }
+        select {
+            background-color: #222;
+            color: #fff;
+            border: 1px solid #444;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        .main-container {
+            display: flex;
+            flex: 1;
+            position: relative;
+            background: #000;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        /* 即時字幕浮動區域 */
+        .subtitle-overlay {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 900px;
+            text-align: center;
+            pointer-events: none;
+            z-index: 999;
+        }
+        .subtitle-text {
+            display: inline-block;
+            background-color: rgba(0, 0, 0, 0.85);
+            color: #ffeb3b; /* 黃色高對比字幕 */
+            font-size: 1.5rem;
+            font-weight: bold;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-shadow: 2px 2px 4px #000;
+            line-height: 1.4;
+            letter-spacing: 1px;
+            word-break: break-word;
+        }
+        .status-tag {
+            font-size: 0.8rem;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Famelack 全球電視播放器 (含即時繁體字幕)</h1>
+        <div class="controls">
+            <span class="status-tag" id="status">字幕系統：未啟動</span>
+            <label for="sourceLang">來源語言：</label>
+            <select id="sourceLang">
+                <option value="en-US">英語 (English)</option>
+                <option value="ja-JP">日語 (日本語)</option>
+                <option value="ko-KR">韓語 (한국어)</option>
+                <option value="zh-CN">簡體中文</option>
+            </select>
+            <button id="toggleSpeechBtn">開啟即時語音字幕</button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- 串接 Famelack (tv.garden) 官方網站 -->
+        <iframe id="tvFrame" src="https://tv.garden/" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+
+        <!-- 字幕顯示區 -->
+        <div class="subtitle-overlay">
+            <div class="subtitle-text" id="subtitleBox">點擊右上角「開啟即時語音字幕」開始識別</div>
+        </div>
+    </div>
+
+    <script>
+        const toggleSpeechBtn = document.getElementById('toggleSpeechBtn');
+        const subtitleBox = document.getElementById('subtitleBox');
+        const statusText = document.getElementById('status');
+        const sourceLangSelect = document.getElementById('sourceLang');
+
+        let recognition = null;
+        let isListening = false;
+
+        // 檢查瀏覽器是否支援 Web Speech API
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        if (!SpeechRecognition) {
+            alert("您的瀏覽器不支援 Web Speech API，請使用 Chrome 或 Edge 瀏覽器開啟此頁面。");
+        } else {
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;     // 持續辨識
+            recognition.interimResults = true; // 即時顯示中間結果
+
+            recognition.onstart = () => {
+                isListening = true;
+                statusText.textContent = "字幕系統：聆聽中...";
+                statusText.style.color = "#4caf50";
+                toggleSpeechBtn.textContent = "關閉即時語音字幕";
+                toggleSpeechBtn.classList.add('active');
+            };
+
+            recognition.onresult = async (event) => {
+                let transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    transcript += event.results[i][0].transcript;
+                }
+
+                if (transcript.trim() !== '') {
+                    // 即時翻譯為繁體中文
+                    const translatedText = await translateToTraditionalChinese(transcript, sourceLangSelect.value);
+                    subtitleBox.textContent = translatedText;
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.error("語音辨識錯誤:", event.error);
+                if (event.error === 'not-allowed') {
+                    alert("請允許網頁存取麥克風/系統聲音，以接收電視聲音進行翻譯。");
+                }
+            };
+
+            recognition.onend = () => {
+                // 若仍在開啟狀態則自動重連，保持持續辨識
+                if (isListening) {
+                    recognition.start();
+                } else {
+                    statusText.textContent = "字幕系統：未啟動";
+                    statusText.style.color = "#888";
+                    toggleSpeechBtn.textContent = "開啟即時語音字幕";
+                    toggleSpeechBtn.classList.remove('active');
+                }
+            };
+        }
+
+        // 開啟/關閉語音辨識按鈕控制
+        toggleSpeechBtn.addEventListener('click', () => {
+            if (!recognition) return;
+
+            if (isListening) {
+                isListening = false;
+                recognition.stop();
+                subtitleBox.textContent = "字幕已關閉";
+            } else {
+                recognition.lang = sourceLangSelect.value;
+                recognition.start();
+            }
+        });
+
+        // 語言選單切換
+        sourceLangSelect.addEventListener('change', () => {
+            if (isListening) {
+                recognition.stop(); // 停止後會自動在 onend 以新語言重啟
+            }
+        });
+
+        // 免費即時翻譯 API (使用 MyMemory 翻譯引擎轉換為繁體中文 zh-TW)
+        async function translateToTraditionalChinese(text, langFrom) {
+            const langPair = `${langFrom.split('-')[0]}|zh-TW`;
+            const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${langPair}`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                if (data.responseData && data.responseData.translatedText) {
+                    return data.responseData.translatedText;
+                }
+                return text;
+            } catch (error) {
+                return text; // 翻譯失敗時回傳原始字串
+            }
+        }
+    </script>
+</body>
+</html>
