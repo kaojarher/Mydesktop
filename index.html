@@ -4,6 +4,16 @@
     
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Mydesktop應用桌面V0</title>
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#3a6ea5">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Mydesktop">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" href="icons/icon-192.png">
+
     <style>
         * {
             box-sizing: border-box;
@@ -1422,4 +1432,51 @@
 </script>
 
 
+
+<!-- PWA：Service Worker 註冊與安裝按鈕（不影響原有功能） -->
+<style>
+    #pwaInstallBtn{position:fixed;top:10px;right:10px;z-index:400;display:none;align-items:center;gap:6px;padding:7px 12px;border:none;border-radius:20px;background:rgba(30,60,120,.92);color:#fff;font-size:13px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.35)}
+    #pwaInstallBtn .x{margin-left:4px;opacity:.7;padding:0 2px}
+    #pwaIosTip{position:fixed;left:50%;bottom:64px;transform:translateX(-50%);z-index:401;display:none;max-width:88vw;padding:12px 16px;border-radius:12px;background:rgba(20,30,50,.95);color:#fff;font-size:13px;line-height:1.6;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.4)}
+</style>
+<button id="pwaInstallBtn" type="button">📲 <span>安裝到裝置</span><span class="x" id="pwaInstallClose" title="關閉">✕</span></button>
+<div id="pwaIosTip">在 Safari 點選下方「分享」<b>⬆︎</b> 圖示<br>再選「加入主畫面」即可安裝<br><small>（點一下此提示可關閉）</small></div>
+<script>
+(function(){
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+        window.addEventListener('load', function(){
+            navigator.serviceWorker.register('sw.js').catch(function(e){ console.warn('SW 註冊失敗', e); });
+        });
+    }
+    var btn = document.getElementById('pwaInstallBtn');
+    var closeBtn = document.getElementById('pwaInstallClose');
+    var tip = document.getElementById('pwaIosTip');
+    var deferred = null;
+    var KEY = 'pwa_install_dismissed';
+    function safeGet(){ try { return localStorage.getItem(KEY); } catch(e){ return null; } }
+    function safeSet(){ try { localStorage.setItem(KEY, '1'); } catch(e){} }
+    var standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+    if (standalone || safeGet()) return;
+
+    window.addEventListener('beforeinstallprompt', function(e){
+        e.preventDefault(); deferred = e; btn.style.display = 'flex';
+    });
+    window.addEventListener('appinstalled', function(){ btn.style.display = 'none'; deferred = null; });
+
+    btn.addEventListener('click', function(){
+        if (deferred) {
+            deferred.prompt();
+            deferred.userChoice.then(function(){ deferred = null; btn.style.display = 'none'; });
+        } else if (isIOS) {
+            tip.style.display = 'block';
+        }
+    });
+    closeBtn.addEventListener('click', function(ev){ ev.stopPropagation(); btn.style.display = 'none'; tip.style.display = 'none'; safeSet(); });
+    tip.addEventListener('click', function(){ tip.style.display = 'none'; });
+
+    if (isIOS) btn.style.display = 'flex'; // iOS 沒有安裝事件，改顯示教學提示按鈕
+})();
+</script>
 </body></html>
